@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Elite.SpanshTools.Sample": {
+      "commandName": "Project",
+      "commandLineArgs": "d:\\data\\galaxy_1month.json"
+    }
+  }
+}
