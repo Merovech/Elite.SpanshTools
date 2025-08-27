@@ -1,22 +1,43 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <BaseOutputPath>$(SolutionDir)bin</BaseOutputPath>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<BaseOutputPath>$(SolutionDir)bin</BaseOutputPath>
+		<!-- NuGet Settings -->
+		<Title>Elite.SpanshTools</Title>
+		<Description>Tools to parse and manipulate Spansh data dumps for Elite: Dangerous.</Description>
+		<Copyright>Copyright © 2025 Ari Roth</Copyright>
+		<PackageProjectUrl>https://github.com/Merovech/Elite.SpanshTools</PackageProjectUrl>
+		<AssemblyVersion>1.0.0.0</AssemblyVersion>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+		<EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+		<PackageTags>elite-dangerous</PackageTags>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<Authors>Ari Roth</Authors>
+		<Company />
+		<PackageReadmeFile>README-nuget.md</PackageReadmeFile>
+		<RepositoryUrl>https://github.com/Merovech/ColorizedConsole</RepositoryUrl>
+		<PackageVersion>1.0.0.0</PackageVersion>
+		<PackageReleaseNotes>Initial release.</PackageReleaseNotes>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <Folder Include="Model\" />
-  </ItemGroup>
+	<ItemGroup>
+		<Folder Include="Model\" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <EditorConfigFiles Remove="D:\src\spansh-parser\src\.editorconfig" />
-  </ItemGroup>
+	<ItemGroup>
+		<EditorConfigFiles Remove="D:\src\spansh-parser\src\.editorconfig" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <None Include="D:\src\spansh-parser\src\.editorconfig" />
-  </ItemGroup>
+	<ItemGroup>
+		<None Include="..\README-nuget.md">
+		  <Pack>True</Pack>
+		  <PackagePath>\</PackagePath>
+		</None>
+		<None Include="D:\src\spansh-parser\src\.editorconfig" />
+	</ItemGroup>
 
 </Project>
