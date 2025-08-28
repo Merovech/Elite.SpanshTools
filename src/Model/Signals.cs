@@ -9,7 +9,7 @@ namespace Elite.SpanshTools.Model
 
 		public List<object> Genuses { get; set; } = [];
 
-		public required string UpdateTime { get; set; }
+		public string? UpdateTime { get; set; }
 	}
 
 	public class SignalsInternal
@@ -27,7 +27,5 @@ namespace Elite.SpanshTools.Model
 		public int? SAA_SignalType_Biological { get; set; }
 
 		public int Opal { get; set; }
-
-
 	}
 }

@@ -5,7 +5,7 @@ Tools for working with Spansh data dumps for Elite Dangerous
 
 ## Installation
 Elite.SpanshTools is available via NuGet:
-ColorizedConsole is available via NuGet.
+
 ``` powershell
 # Using powershell
 Install-Package Elite.SpanshTools
@@ -20,21 +20,21 @@ dotnet add package Elite.SpanshTools
 ## What is this?
 This is a set of tools and models for working programmatically in .NET with [Spansh data dumps](https://www.spansh.co.uk/dumps) for Elite Dangerous.  Specifically, it's for parsing files into an object model that can then be used in your tools, or just dumped to some format you feel like using to examine it.  The sky's the limit.
 
-I've tested this on a full galaxy dump (~500gb unzipped) and the one-month dump (~22gb unzipped).  Time results were as follows:
-
-Full Galaxy: 45 minutes  
-One-Month: 2 minutes
-
-Memory stayed below 200mb the whole time, though this is observational information, not scientific data.
-
 ## What's *in* this?
 This package contains two major items:
 
-1. An object model representing the JSON format of the data dumps.  The top-level object is `StarSystem`.  Where possible, the model provides empty collections when a property doesn't exist for the system (e.g., a body has no stations) rather than null values.
+1. An object model representing the JSON format of the data dumps.  The top-level object is `StarSystem`.  Where possible, the model provides empty collections when a property doesn't exist for the system (e.g., a body has no stations) rather than null values, though there are plenty of nullable strings around.
 
 2. A class called `GalaxyParser` (along with `IGalaxyParser` for dependency injection purposes) that parses a data dump as a stream.  That is, it parses one line, does a `yield return`, and goes to the next line.  See below for the method signatures.
 
-You can also find some benchmarks in a separate project if you want to look at the code at [the project's GitHub page](https://github.com/Merovech/Elite.SpanshTools).
+You can also find some benchmarks in a separate project if you want to look at the code.  To run the benchmark, you can just build it and run it at the command line (I recommend running it outside of the Visual Studio debugger).  Use these commands, beginning at the source code root:
+
+``` bash
+$ cd benchmarks
+$ dotnet build -C Release
+$ bin/Release/net8.0
+$ ./Elite.SpanshTools.Benchmark.exe
+```
 
 ## Usage
 Parsing a dump into a model is really easy:
@@ -78,14 +78,24 @@ IAsyncEnumerable<StarSystem?> ParseStringAsync(string inputString);
 IAsyncEnumerable<StarSystem?> ParseStreamAsync(Stream inputSteam);
 ```
 
+## Performance
+But how does it perform?  Well, in addition to your machine, performance is dependent on the length of the individual records.  A system like Sol (that has a JSON record 1,760,997 characters long) or Achenar (869,049 characters) will take longer to parse than Hypi Flee AA-A h0 (157 characters).  Likewise, the galaxy files that contain details about systems, bodies, stations, markets, and commodities will take longer than the system files that contain top-level system information only.
+
+That said, here are some numbers I found during my testing.
+
+| File | File Size (unzipped) | Records Found | Time to Parse (mm:ss) | Records/Sec |
+| :--- | -------------------: | ------------: | --------------------: | ----------: |
+| galaxy.json | 481 GB | 161,064,963 | 41:26.76 | 64,769.10 |
+| galaxy_1month.json | 21 GB | 2,968,209 | 01:31.44 | 32,461.46 |
+| systems_neutron.json | 700 MB | 4,216,759 | 00:03.16 | 1,335,504.19 |
+| systems_1month.json | 646 MB | 3,788,924 | 00:03.82 | 992,889.16 |
+
 ## Caveats
 There a few things to be aware of here:
 
-1. This has been tested ONLY on galaxy dumps.  Spansh provides 13 dumps of various sizes; 6 are galaxy dumps and 7 are system dumps.  **I have not tested this on system files.**  That is coming in a future release (see Future Plans, below).  That said, the galaxy files will parse with complete systems.  It's just the 7 data dump files I haven't tested yet.
+1. Of the three methods available on `GalaxyParser`, only `ParseFromStream()` will not dispose the stream for you.  The caller is responsible for handling that.  The other two will create and tear down streams based on their input.
 
-2. Of the three methods available on `GalaxyParser`, only `ParseFromStream()` will not dispose the stream for you.  The caller is responsible for handling that.  The other two will create and tear down streams based on their input.
-
-3. The format of the dumps is an array of objects (see below), comma-separated.  Therefore, it is assumed that the format of any input is the same.
+2. The format of the dumps is an array of objects (see below), comma-separated.  Therefore, it is assumed that the format of any input is the same.
 ``` json
 [
     { "id64":1234567890987, "name":"system1", ... },
@@ -97,19 +107,21 @@ There a few things to be aware of here:
 ## Future Plans
 :arrow_forward:= In Progress
 :white_check_mark:= Complete
-:x:= Incomplete
+:black_square_button:= Not started
 :grey_question:= Idea (needs investigation)
 
 * :white_check_mark: 1.0.0.0 Release
-* :x: Set up GitHub project management
-  * :x: Work item board
-  * :x: GitHub build actions
-* :x: Test against system dumps (e.g., `systems.json.gz`, etc.)
-  * :grey_question: If necessary, modify or create a second object model for these
+* :white_square_button: Set up GitHub project management
+  * :white_square_button: Work item board
+  * :white_square_button: GitHub build actions
+* :white_square_button: XML documentation for the actual model
+* :white_square_button: Unit tests
 * :grey_question: Performance improvement investigation
 * :grey_question: Any community requests that come through :)
 
 ## Thanks and Final Notes
 Hopefully the community will find this useful.  I certainly did for some tooling that I'm writing for other projects.  And it's been a fun exercise in managing huge amounts of data, which I don't get to do often.
 
-Thanks to Spansh for all the work he does both in providing these dumps for the Elite community and creating phenomenally useful [tools](https://www.spansh.co.uk/plotter) for CMDRs.  I've used them for most of my exploration missions, and they're invaluable.
+Thanks to Spansh for all the work he does both in providing these dumps to the Elite community and creating phenomenally useful [tools](https://www.spansh.co.uk/plotter) for CMDRs.  I've used them for most of my exploration missions, and they're invaluable.
+
+If you have any questions, comments, or whatever, feel free to contact [Merovech](https://github.com/Merovech) on GitHub.  If you find any bugs, feel free to open an issue here!

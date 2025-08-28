@@ -43,7 +43,7 @@ namespace Elite.SpanshTools.Model
 
 		public Dictionary<string, DateTime> Timestamps { get; set; } = [];
 
-		public required string Date { get; set; }
+		public string? Date { get; set; }
 
 		public List<Body> Bodies { get; set; } = [];
 

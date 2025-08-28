@@ -19,7 +19,7 @@
 		<Authors>Ari Roth</Authors>
 		<Company />
 		<PackageReadmeFile>README-nuget.md</PackageReadmeFile>
-		<RepositoryUrl>https://github.com/Merovech/ColorizedConsole</RepositoryUrl>
+		<RepositoryUrl>https://github.com/Merovech/Elite.SpanshTools</RepositoryUrl>
 		<PackageVersion>1.0.0.0</PackageVersion>
 		<PackageReleaseNotes>Initial release.</PackageReleaseNotes>
 	</PropertyGroup>
@@ -36,6 +36,7 @@
 		<None Include="..\README-nuget.md">
 		  <Pack>True</Pack>
 		  <PackagePath>\</PackagePath>
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
 		<None Include="D:\src\spansh-parser\src\.editorconfig" />
 	</ItemGroup>

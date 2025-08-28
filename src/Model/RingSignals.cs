@@ -7,6 +7,6 @@ namespace Elite.SpanshTools.Model
 		[JsonPropertyName("signals")]
 		public Dictionary<string, string> Signals = [];
 
-		public required string UpdateTime { get; set; }
+		public string? UpdateTime { get; set; }
 	}
 }
