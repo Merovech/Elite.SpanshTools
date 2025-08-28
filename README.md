@@ -110,7 +110,7 @@ There a few things to be aware of here:
 :black_square_button:= Not started
 :grey_question:= Idea (needs investigation)
 
-* :white_check_mark: 1.0.0.0 Release
+* :white_check_mark: 1.0.0 Release
 * :white_square_button: Set up GitHub project management
   * :white_square_button: Work item board
   * :white_square_button: GitHub build actions
