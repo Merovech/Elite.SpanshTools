@@ -111,8 +111,8 @@ There a few things to be aware of here:
 :grey_question:= Idea (needs investigation)
 
 * :white_check_mark: 1.0.0 Release
-* :white_square_button: Set up GitHub project management
-  * :white_square_button: Work item board
+* :arrow_forward: Set up GitHub project management
+  * :white_check_mark: Work item board
   * :white_square_button: GitHub build actions
 * :white_square_button: XML documentation for the actual model
 * :white_square_button: Unit tests
