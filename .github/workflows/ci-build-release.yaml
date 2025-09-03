@@ -1,14 +1,28 @@
-name: CI Build (Release)
+name: CI Build (Debug)
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
+  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-jobs:
-  debug-build:
-    uses: ./.github/workflows/ci-build-base.yml
-    with:
-      configuration: Release
+jobs:      
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build solution
+        run: dotnet build -c Release
+
+      - name: Run tests
+        run: dotnet test -c Release --no-build --no-restore
