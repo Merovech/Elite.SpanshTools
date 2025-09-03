@@ -1,0 +1,14 @@
+name: CI Build (Release)
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+  workflow_dispatch:
+
+jobs:
+  debug-build:
+    uses: ./.github/workflows/ci-build-base.yml
+    with:
+      configuration: Release
