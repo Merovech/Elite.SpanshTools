@@ -1,0 +1,12 @@
+name: CI Build (Debug)
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  debug-build:
+    uses: ./.github/workflows/ci-build-base.yml
+    with:
+      configuration: Debug
