@@ -1,7 +1,9 @@
 # Elite.SpanshTools
-Tools for working with Spansh data dumps for Elite Dangerous
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)  
+[![CI Build (Release)](https://github.com/Merovech/Elite.SpanshTools/actions/workflows/ci-build-release.yaml/badge.svg)](https://github.com/Merovech/Elite.SpanshTools/actions/workflows/ci-build-release.yaml)
+[![CI Build (Debug)](https://github.com/Merovech/Elite.SpanshTools/actions/workflows/ci-build-debug.yaml/badge.svg)](https://github.com/Merovech/Elite.SpanshTools/actions/workflows/ci-build-debug.yaml)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+Tools for working with Spansh data dumps for Elite Dangerous  
 
 ## Installation
 Elite.SpanshTools is available via NuGet:
@@ -111,11 +113,11 @@ There a few things to be aware of here:
 :grey_question:= Idea (needs investigation)
 
 * :white_check_mark: 1.0.0 Release
-* :arrow_forward: Set up GitHub project management
+* :white_check_mark: Set up GitHub project management
   * :white_check_mark: Work item board
-  * :white_square_button: GitHub build actions
+  * :white_check_mark: GitHub build actions
+* :arrow_forward: Unit tests
 * :white_square_button: XML documentation for the actual model
-* :white_square_button: Unit tests
 * :grey_question: Performance improvement investigation
 * :grey_question: Any community requests that come through :)
 
