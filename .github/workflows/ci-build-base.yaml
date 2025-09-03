@@ -1,0 +1,30 @@
+name: CI Build Base
+
+on:
+  workflow_call:
+    inputs:
+      configuration:
+        required: true
+        type: string
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:      
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build solution
+        run: dotnet build -c ${{ inputs.configuration }}
+
+      - name: Run tests
+        run: dotnet test -c ${{ inputs.configuration }} --no-build --no-restore

@@ -9,6 +9,6 @@ on:
 
 jobs:
   debug-build:
-    uses: ./.github/workflows/ci-build-base.yml
+    uses: ./ci-build-base.yml
     with:
       configuration: Release
