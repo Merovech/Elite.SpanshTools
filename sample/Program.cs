@@ -14,5 +14,5 @@ while (selection != 0)
 	selection = HelperMethods.GetSelection();
 
 	// Run the selected demo.
-	runner.RunDemo((DemoMethods)selection);
+	await runner.RunDemo((DemoMethods)selection);
 }
