@@ -2,6 +2,9 @@
 {
 	internal static class HelperMethods
 	{
+		// Subtract 1 because "None" should not be selectable
+		internal static int AvailableOptions = Enum.GetValues(typeof(DemoMethods)).Length - 1;
+
 		internal static string ValidateProgramArgs(string[] args)
 		{
 			if (args.Length == 0)
@@ -24,7 +27,7 @@
 		{
 			var selection = Console.ReadLine();
 			var result = byte.MaxValue;
-			while (!byte.TryParse(selection, out result) || result < 0 || result > 5)
+			while (!byte.TryParse(selection, out result) || result < 0 || result > AvailableOptions)
 			{
 				Console.Write("Enter a selection (0 to exit): ");
 				selection = Console.ReadLine();
@@ -36,10 +39,8 @@
 		internal static void DisplayMenu()
 		{
 			Console.WriteLine("Demos:");
-			Console.WriteLine("1\tCount systems using object model (slower parse, easier data access)");
-			Console.WriteLine("2\tCount systems using JsonDocument (faster parse, slower/harder data access)");
-			Console.WriteLine("3\tCount stations using object model (slower parse, easier data access)");
-			Console.WriteLine("4\tCount stations using JsonDocument (faster parse, slower/harder data access)");
+			Console.WriteLine("1\tCount systems using ParseByFile");
+			Console.WriteLine("2\tCount stations using ParseByFile");
 			Console.Write("Enter a selection (0 to exit): ");
 		}
 
