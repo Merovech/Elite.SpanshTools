@@ -1,6 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Text.Json;
-using Elite.SpanshTools.Model;
 using Elite.SpanshTools.Parsers;
 using Elite.SpanshTools.Sample.Helpers;
 
@@ -15,47 +13,35 @@ namespace Elite.SpanshTools.Sample
 			Filename = filename;
 		}
 
-		public void RunDemo(DemoMethods methodToRun)
+		public async Task RunDemo(DemoMethods methodToRun)
 		{
 			switch (methodToRun)
 			{
 				case DemoMethods.None:
 					return;
 
-				case DemoMethods.SystemsByModel:
-					Console.WriteLine("Counting systems with the data model.");
-					RunDemoInternal(CountSystemsWithModel);
+				case DemoMethods.SystemsByFile:
+					Console.WriteLine($"Counting systems found in '{Filename}...");
+					await RunDemoInternal(CountSystemsByFile);
 					break;
 
-				case DemoMethods.SystemsByDocument:
-					Console.WriteLine("Count systems with doc.");
-					RunDemoInternal(CountSystemsWithDocument);
+				case DemoMethods.StationsByFile:
+					Console.WriteLine($"Counting stations found in '{Filename}...");
+					await RunDemoInternal(CountStationsWithModel);
 					break;
 
-				case DemoMethods.StationsByModel:
-					Console.WriteLine("Count stations with model.");
-					RunDemoInternal(CountStationsWithModel);
-					break;
-
-				case DemoMethods.StationsByDocument:
-					Console.WriteLine("Count stations with doc.");
-					RunDemoInternal(CountStationsWithDocument);
-					break;
-
+				// TO DO: Other IGalaxyParser methods.
 				default:
-					Console.WriteLine("Writing benchmark data.");
-					new GalaxyParser().GenerateBenchmarkData(Filename);
-					Console.WriteLine("Done.");
-					Console.ReadKey();
+					Console.WriteLine("Unknown option selected.");
 					break;
 			}
 		}
 
-		private void RunDemoInternal(Action demoMethod)
+		private async Task RunDemoInternal(Func<Task> demoMethod)
 		{
 			Stopwatch sw = new();
 			sw.Start();
-			demoMethod.Invoke();
+			await demoMethod();
 			sw.Stop();
 			Console.WriteLine($"Completed in {sw.Elapsed:c}");
 			Console.WriteLine("Press any key to continue.");
@@ -66,34 +52,12 @@ namespace Elite.SpanshTools.Sample
 		/// Counts stations in the file using the object model.
 		/// </summary>
 		/// <param name="filename">The path to the file containing the JSON.</param>
-		private void CountSystemsWithModel()
+		private async Task CountSystemsByFile()
 		{
 			long count = 0;
 
 			IGalaxyParser parser = new GalaxyParser();
-			foreach (StarSystem system in parser.ParseToModel(Filename))
-			{
-				count++;
-				if (count % 10000 == 0)
-				{
-					HelperMethods.LogUpdate(count);
-				}
-			}
-
-			Console.CursorLeft = 0;
-			Console.WriteLine($"Systems found: {count}");
-		}
-
-		/// <summary>
-		/// Counts stations in the file using JsonDocument.
-		/// </summary>
-		/// <param name="filename">The path to the file containing the JSON.</param>
-		private void CountSystemsWithDocument()
-		{
-			long count = 0;
-
-			IGalaxyParser parser = new GalaxyParser();
-			foreach (JsonDocument system in parser.ParseToDocument(Filename))
+			await foreach (var system in parser.ParseFileAsync(Filename))
 			{
 				count++;
 				if (count % 10000 == 0)
@@ -111,64 +75,24 @@ namespace Elite.SpanshTools.Sample
 		/// work with.
 		/// </summary>
 		/// <param name="filename">The path to the file containing the JSON.</param>
-		private void CountStationsWithModel()
+		private async Task CountStationsWithModel()
 		{
 			long systemCount = 0;
 			long stationCount = 0;
 
 			IGalaxyParser parser = new GalaxyParser();
-			foreach (StarSystem system in parser.ParseToModel(Filename))
+			await foreach (var system in parser.ParseFileAsync(Filename))
 			{
-				systemCount++;
-				stationCount += system.Stations.Count;
-				stationCount += system.Bodies.Sum(b => b.Stations.Count);
-
-				if (systemCount % 10000 == 0)
+				if (system is not null)
 				{
-					HelperMethods.LogUpdate(stationCount);
-				}
-			}
+					systemCount++;
+					stationCount += system.Stations.Count;
+					stationCount += system.Bodies.Sum(b => b.Stations.Count);
 
-			Console.CursorLeft = 0;
-			Console.WriteLine($"Stations found: {stationCount}");
-		}
-
-		/// <summary>
-		/// Counts stations in the file using JsonDocument, which parses faster but it's more
-		/// difficult to access data in the parsed object.
-		/// </summary>
-		/// <param name="filename">The path to the file containing the JSON.</param>
-		private void CountStationsWithDocument()
-		{
-			long systemCount = 0;
-			long stationCount = 0;
-
-			IGalaxyParser parser = new GalaxyParser();
-			foreach (JsonDocument system in parser.ParseToDocument(Filename))
-			{
-				systemCount++;
-				JsonElement root = system.RootElement;
-
-				if (root.TryGetProperty("stations", out JsonElement systemStationsElement))
-				{
-					stationCount += systemStationsElement.GetArrayLength();
-				}
-
-				// Bodies will always exist and have at least one item in it -- after all, even the jump point star is a body
-				JsonElement bodies = root.GetProperty("bodies");
-				var bodyEnumerator = bodies.EnumerateArray();
-				while (bodyEnumerator.MoveNext())
-				{
-					JsonElement body = bodyEnumerator.Current;
-					if (body.TryGetProperty("stations", out JsonElement bodyStationsElement))
+					if (systemCount % 10000 == 0)
 					{
-						stationCount += bodyStationsElement.GetArrayLength();
+						HelperMethods.LogUpdate(stationCount);
 					}
-				}
-
-				if (systemCount % 10000 == 0)
-				{
-					HelperMethods.LogUpdate(stationCount);
 				}
 			}
 
