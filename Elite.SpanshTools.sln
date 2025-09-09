@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elite.SpanshTools", "src\El
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elite.SpanshTools.Benchmark", "benchmarks\Elite.SpanshTools.Benchmark.csproj", "{0D1F2A8A-7841-2C80-0FFE-CB2A36EDA9C3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elite.SpanshTools.Sample", "sample\Elite.SpanshTools.Sample.csproj", "{A215A3E4-4D5E-9995-39B0-913281749A41}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elite.SpanshTools.Tests", "test\Elite.SpanshTools.Tests.csproj", "{D5FBD454-B4CE-2DCE-DA07-1553DEF19CD4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		{0D1F2A8A-7841-2C80-0FFE-CB2A36EDA9C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0D1F2A8A-7841-2C80-0FFE-CB2A36EDA9C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0D1F2A8A-7841-2C80-0FFE-CB2A36EDA9C3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A215A3E4-4D5E-9995-39B0-913281749A41}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A215A3E4-4D5E-9995-39B0-913281749A41}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A215A3E4-4D5E-9995-39B0-913281749A41}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A215A3E4-4D5E-9995-39B0-913281749A41}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5FBD454-B4CE-2DCE-DA07-1553DEF19CD4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5FBD454-B4CE-2DCE-DA07-1553DEF19CD4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5FBD454-B4CE-2DCE-DA07-1553DEF19CD4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5FBD454-B4CE-2DCE-DA07-1553DEF19CD4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
