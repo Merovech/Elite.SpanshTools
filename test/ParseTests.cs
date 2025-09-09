@@ -19,14 +19,7 @@ namespace Elite.SpanshTools.Tests
 		[DataRow(TestJson.YesBodiesNoStations, false)]
 		public async Task Json_Should_Parse_As_Expected(string json, bool willThrowException)
 		{
-			IGalaxyParser parser = new GalaxyParser();
-			var action = async () =>
-			{
-				await foreach (StarSystem? s in parser.ParseStringAsync(json))
-				{
-					// Do nothing
-				}
-			};
+			async Task<long> action() => await TestMethod(json);
 
 			if (willThrowException)
 			{
@@ -34,8 +27,19 @@ namespace Elite.SpanshTools.Tests
 			}
 			else
 			{
-				await action.Invoke();
+				await action();
 			}
+		}
+
+		private async Task<long> TestMethod(string json)
+		{
+			GalaxyParser parser = new GalaxyParser();
+			await foreach (StarSystem? _ in parser.ParseStringAsync(json))
+			{
+				// Do nothing.  We're just seeing if the strings parse appropriately.
+			}
+
+			return 0;
 		}
 	}
 }
