@@ -116,7 +116,7 @@ There a few things to be aware of here:
 * :white_check_mark: Set up GitHub project management
   * :white_check_mark: Work item board
   * :white_check_mark: GitHub build actions
-* :arrow_forward: Unit tests
+* :white_check_mark: Unit tests
 * :white_square_button: XML documentation for the actual model
 * :grey_question: Performance improvement investigation
 * :grey_question: Any community requests that come through :)
