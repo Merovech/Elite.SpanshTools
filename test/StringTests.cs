@@ -5,7 +5,7 @@ using Elite.SpanshTools.Parsers;
 namespace Elite.SpanshTools.Tests
 {
 	[TestClass]
-	public class ParseTests
+	public class StringTests
 	{
 		[TestMethod]
 		[DataRow(TestJson.EmptyList, false)]
@@ -29,6 +29,30 @@ namespace Elite.SpanshTools.Tests
 			{
 				await action();
 			}
+		}
+
+		[TestMethod]
+		public async Task Should_Throw_On_Null_String()
+		{
+			string json = null!;
+			async Task<long> action() => await TestMethod(json);
+			await Assert.ThrowsExceptionAsync<ArgumentNullException>(action);
+		}
+
+		[TestMethod]
+		public async Task Should_Throw_On_Empty_String()
+		{
+			string json = string.Empty;
+			async Task<long> action() => await TestMethod(json);
+			await Assert.ThrowsExceptionAsync<ArgumentNullException>(action);
+		}
+
+		[TestMethod]
+		public async Task Should_Throw_On_Whitespace_String()
+		{
+			string json = "     ";
+			async Task<long> action() => await TestMethod(json);
+			await Assert.ThrowsExceptionAsync<ArgumentNullException>(action);
 		}
 
 		private async Task<long> TestMethod(string json)
