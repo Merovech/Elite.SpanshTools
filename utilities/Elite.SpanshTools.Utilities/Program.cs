@@ -28,7 +28,7 @@ namespace Elite.SpanshTools.Utilities
 			Console.WriteLine("that could potentially have quirks.");
 			Console.WriteLine();
 			Console.WriteLine("For ideal results, this should be run against the full Spansh galaxy dump, but");
-			Console.WriteLine("that takes a long time -- on the order of sev eral minutes.");
+			Console.WriteLine("that takes a long time -- on the order of half an hour or more.");
 
 			Console.WriteLine();
 			Console.WriteLine($"Input file: {args[0]}");
@@ -50,10 +50,10 @@ namespace Elite.SpanshTools.Utilities
 					}
 				}
 
-				Console.WriteLine();
-				Console.WriteLine($"Records parsed: {recordCount}");
+				Console.CursorLeft = 0;
+				Console.WriteLine($"Records parsed: {recordCount}".PadRight(Console.BufferWidth));
 				Console.WriteLine("No errors found.  Model and data format are in sync.");
-				Console.WriteLine($"Time elapsed: {DateTime.Now.Subtract(start):C}");
+				Console.WriteLine($"Time elapsed: {DateTime.Now.Subtract(start):c}");
 
 				return 0;
 			}
