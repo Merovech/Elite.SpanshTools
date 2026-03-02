@@ -4,6 +4,8 @@
 	{
 		public required string Name { get; set; }
 
+		public string? State { get; set; }
+
 		public string? Government { get; set; }
 
 		public string? Allegiance { get; set; }

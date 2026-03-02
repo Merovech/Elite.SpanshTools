@@ -8,9 +8,9 @@
 		<!-- NuGet Settings -->
 		<Title>Elite.SpanshTools</Title>
 		<Description>Tools to parse and manipulate Spansh data dumps for Elite: Dangerous.</Description>
-		<Copyright>Copyright © 2025 Ari Roth</Copyright>
+		<Copyright>Copyright © 2025-2026 Ari Roth</Copyright>
 		<PackageProjectUrl>https://github.com/Merovech/Elite.SpanshTools</PackageProjectUrl>
-		<AssemblyVersion>1.0.0.0</AssemblyVersion>
+		<AssemblyVersion>1.5.0</AssemblyVersion>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 		<EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
@@ -20,13 +20,10 @@
 		<Company />
 		<PackageReadmeFile>README-nuget.md</PackageReadmeFile>
 		<RepositoryUrl>https://github.com/Merovech/Elite.SpanshTools</RepositoryUrl>
-		<PackageVersion>1.0.0.0</PackageVersion>
-		<PackageReleaseNotes>Initial release.</PackageReleaseNotes>
+		<PackageVersion>1.0.1</PackageVersion>
+		<PackageReleaseNotes>Several model fixes and a validator added.  See README-nuget.md for details.</PackageReleaseNotes>
+		<FileVersion></FileVersion>
 	</PropertyGroup>
-
-	<ItemGroup>
-		<Folder Include="Model\" />
-	</ItemGroup>
 
 	<ItemGroup>
 		<EditorConfigFiles Remove="D:\src\spansh-parser\src\.editorconfig" />

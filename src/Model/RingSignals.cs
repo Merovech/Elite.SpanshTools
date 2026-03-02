@@ -2,11 +2,11 @@
 
 namespace Elite.SpanshTools.Model
 {
-	public class RingSignals
-	{
-		[JsonPropertyName("signals")]
-		public Dictionary<string, string> Signals = [];
+public class RingSignals
+{
+	[JsonPropertyName("signals")]
+	public Dictionary<string, int>? Signals { get; set; }
 
-		public string? UpdateTime { get; set; }
-	}
+	public string? UpdateTime { get; set; }
+}
 }
