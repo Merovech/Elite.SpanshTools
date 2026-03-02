@@ -4,28 +4,14 @@ namespace Elite.SpanshTools.Model
 {
 	public class Signals
 	{
+		// The JSON uses an inner "signals" object whose keys vary (Monazite, Painite,
+		// or $SAA_SignalType_*). Deserialize that inner object into a dictionary so
+		// we accept any key names.
 		[JsonPropertyName("signals")]
-		public required SignalsInternal SignalsInternal { get; set; }
+		public Dictionary<string, int>? SignalsMap { get; set; }
 
-		public List<object> Genuses { get; set; } = [];
+		public List<object> Genuses { get; set; } = new List<object>();
 
 		public string? UpdateTime { get; set; }
-	}
-
-	public class SignalsInternal
-	{
-		[JsonPropertyName("$SAA_SignalType_Human;")]
-		public int SAA_SignalType_Human { get; set; }
-
-		[JsonPropertyName("$SAA_SignalType_Other;")]
-		public int? SAA_SignalType_Other { get; set; }
-
-		[JsonPropertyName("$SAA_SignalType_Geological;")]
-		public int? SAA_SignalType_Geological { get; set; }
-
-		[JsonPropertyName("SAA_SignalType_Biological;")]
-		public int? SAA_SignalType_Biological { get; set; }
-
-		public int Opal { get; set; }
 	}
 }

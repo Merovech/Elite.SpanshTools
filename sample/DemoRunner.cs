@@ -4,14 +4,9 @@ using Elite.SpanshTools.Sample.Helpers;
 
 namespace Elite.SpanshTools.Sample
 {
-	public class DemoRunner
+	public class DemoRunner(string filename)
 	{
-		private string Filename { get; init; }
-
-		public DemoRunner(string filename)
-		{
-			Filename = filename;
-		}
+		private string Filename { get; init; } = filename;
 
 		public async Task RunDemo(DemoMethods methodToRun)
 		{
@@ -37,7 +32,7 @@ namespace Elite.SpanshTools.Sample
 			}
 		}
 
-		private async Task RunDemoInternal(Func<Task> demoMethod)
+		private static async Task RunDemoInternal(Func<Task> demoMethod)
 		{
 			Stopwatch sw = new();
 			sw.Start();
@@ -56,7 +51,7 @@ namespace Elite.SpanshTools.Sample
 		{
 			long count = 0;
 
-			IGalaxyParser parser = new GalaxyParser();
+			GalaxyParser parser = new GalaxyParser();
 			await foreach (var system in parser.ParseFileAsync(Filename))
 			{
 				count++;
@@ -80,7 +75,7 @@ namespace Elite.SpanshTools.Sample
 			long systemCount = 0;
 			long stationCount = 0;
 
-			IGalaxyParser parser = new GalaxyParser();
+			GalaxyParser parser = new GalaxyParser();
 			await foreach (var system in parser.ParseFileAsync(Filename))
 			{
 				if (system is not null)

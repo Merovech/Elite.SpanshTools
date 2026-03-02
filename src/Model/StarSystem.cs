@@ -41,6 +41,8 @@ namespace Elite.SpanshTools.Model
 
 		public List<string> Powers { get; set; } = [];
 
+		public List<PowerConflictProgress> PowerConflictProgress { get; set; } = [];
+
 		public Dictionary<string, DateTime> Timestamps { get; set; } = [];
 
 		public string? Date { get; set; }
@@ -48,5 +50,8 @@ namespace Elite.SpanshTools.Model
 		public List<Body> Bodies { get; set; } = [];
 
 		public List<Station> Stations { get; set; } = [];
+
+		[JsonPropertyName("thargoidWar")]
+		public ThargoidWarState? ThargoidWarState { get; set; }
 	}
 }

@@ -1,11 +1,16 @@
-﻿namespace Elite.SpanshTools.Model
+﻿using System.Text.Json.Serialization;
+
+namespace Elite.SpanshTools.Model
 {
 	public class Belt
 	{
 		public required string Name { get; set; }
 
 		public required string Type { get; set; }
-		
+
+		[JsonPropertyName("id64")]
+		public long Id { get; set; }
+
 		public double Mass{get; set;}
 		
 		public double InnerRadius{get; set;}
