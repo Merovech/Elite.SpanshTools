@@ -60,6 +60,24 @@ There a few things to be aware of here:
 ]
 ```
 
+## Changelist
+### 1.1.0
+!! indicates a potential breaking change.
+
+* Added `ModelVerifier` project to ensure the model gets properly parsed from JSON.
+* Added various properties after running the verifier and discovering they were missing.
+* !! Fixed `RingSignals.SignalsInternal` since it wasn't properly being parsed.
+  * Changed the data type to `Dictionary<string, int>?`
+  * Renamed it to `SignalsMap`
+  * *Note: This is technically a breaking change, but it was always parsing incorrectly into default values, so I highly doubt anyone will actually run into a problem here.*
+* Some demo cleanup
+
+### 1.0.1
+* Minor fixes to non-required properties
+
+### 1.0.0
+* Initial release
+
 ## Thanks and Final Notes
 Thanks to Spansh for all the work he does both in providing these dumps to the Elite community and creating phenomenally useful [tools](https://www.spansh.co.uk/plotter) for CMDRs.  I've used them for most of my exploration missions, and they're invaluable.
 

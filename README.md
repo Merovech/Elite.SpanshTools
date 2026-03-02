@@ -38,6 +38,8 @@ $ bin/Release/net8.0
 $ ./Elite.SpanshTools.Benchmark.exe
 ```
 
+Finally, there's also a model verifier that I use to ensure everything parses correctly into the model.  Moving forward, I intend on running it once a month on Spansh's entire galaxy dump.
+
 ## Usage
 Parsing a dump into a model is really easy:
 
@@ -120,6 +122,24 @@ There a few things to be aware of here:
 * :white_square_button: XML documentation for the actual model
 * :grey_question: Performance improvement investigation
 * :grey_question: Any community requests that come through :)
+
+## Changelist
+### 1.1.0
+!! indicates a potential breaking change.
+
+* Added `ModelVerifier` project to ensure the model gets properly parsed from JSON.
+* Added various properties after running the verifier and discovering they were missing.
+* !! Fixed `RingSignals.SignalsInternal` since it wasn't properly being parsed.
+  * Changed the data type to `Dictionary<string, int>?`
+  * Renamed it to `SignalsMap`
+  * *Note: This is technically a breaking change, but it was always parsing incorrectly into default values, so I highly doubt anyone will actually run into a problem here.*
+* Some demo cleanup
+
+### 1.0.1
+* Minor fixes to non-required properties
+
+### 1.0.0
+* Initial release
 
 ## Thanks and Final Notes
 Hopefully the community will find this useful.  I certainly did for some tooling that I'm writing for other projects.  And it's been a fun exercise in managing huge amounts of data, which I don't get to do often.
