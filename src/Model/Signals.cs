@@ -10,7 +10,7 @@ namespace Elite.SpanshTools.Model
 		[JsonPropertyName("signals")]
 		public Dictionary<string, int>? SignalsMap { get; set; }
 
-		public List<object> Genuses { get; set; } = new List<object>();
+		public List<object> Genuses { get; set; } = [];
 
 		public string? UpdateTime { get; set; }
 	}

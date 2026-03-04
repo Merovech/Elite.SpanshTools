@@ -38,7 +38,7 @@ $ bin/Release/net8.0
 $ ./Elite.SpanshTools.Benchmark.exe
 ```
 
-Finally, there's also a model verifier that I use to ensure everything parses correctly into the model.  Moving forward, I intend on running it once a month on Spansh's entire galaxy dump.
+Finally, there's also a model verifier that I use to ensure everything parses correctly into the model.  Moving forward, I intend on running it once a month on Spansh's entire galaxy dump.  Note that it only runs on Debug builds.
 
 ## Usage
 Parsing a dump into a model is really easy:
@@ -124,6 +124,13 @@ There a few things to be aware of here:
 * :grey_question: Any community requests that come through :)
 
 ## Changelist
+### 1.1.1
+* `Belt` was missing `Signals`; this has been added.
+  * It has the same properties and whatnot as the one on `Body`.
+* Added `ThargoidWarState` to `System`, as it was missing.
+* Modifications to the model verifier to return all errors instead of exiting at the first one.
+  * Also includes an elapsed time message.
+
 ### 1.1.0
 !! indicates a potential breaking change.
 
