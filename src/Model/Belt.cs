@@ -16,5 +16,7 @@ namespace Elite.SpanshTools.Model
 		public double InnerRadius{get; set;}
 		
 		public double OuterRadius{get; set;}
+
+		public Signals? Signals { get; set; }
 	}
 }

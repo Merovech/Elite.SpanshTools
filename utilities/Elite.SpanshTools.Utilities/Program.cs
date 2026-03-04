@@ -1,11 +1,17 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 using Elite.SpanshTools.Model;
-using Elite.SpanshTools.Parsers;
 
 namespace Elite.SpanshTools.Utilities
 {
 	public class Program
 	{
+		private readonly static JsonSerializerOptions SerializerOptions = new()
+		{
+			PropertyNameCaseInsensitive = true,
+			UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow
+		};
+
 		static async Task<int> Main(string[] args)
 		{
 			if (args.Length != 1)
@@ -21,6 +27,8 @@ namespace Elite.SpanshTools.Utilities
 			}
 
 			int recordCount = 0;
+			List<(string Error, string Line)> errors = [];
+
 			Console.WriteLine("This tool parses a Spansh data file to the model to see if any properties are");
 			Console.WriteLine("missing or incorrectly parsed.  If there are any errors, the tool will exit.");
 			Console.WriteLine("Otherwise, the tool will run to the end.  The larger the data file, the more");
@@ -39,23 +47,58 @@ namespace Elite.SpanshTools.Utilities
 			{
 				DateTime start = DateTime.Now;
 				Console.Write("Records parsed: 0");
-				GalaxyParser parser = new GalaxyParser();
-				await foreach (StarSystem? system in parser.ParseFileAsync(args[0]))
+				await foreach (var line in File.ReadLinesAsync(args[0]))
 				{
-					recordCount++;
-					if (recordCount % 10000 == 0)
+					if (line == "[" || line == "]")
 					{
-						Console.CursorLeft = 0;
-						Console.Write($"Records parsed: { recordCount }".PadRight(Console.BufferWidth));
+						continue;
+					}
+
+					try
+					{
+						var sanitizedLine = line;
+						if (line.EndsWith(','))
+						{
+							sanitizedLine = line[..^1];
+						}
+
+						JsonSerializer.Deserialize<StarSystem>(sanitizedLine, SerializerOptions);
+					}
+					catch (JsonException e)
+					{
+						errors.Add(($"Parsing error (line: {e.LineNumber}): {e.Message}", line));
+					}
+					finally
+					{
+						recordCount++;
+						if (recordCount % 10000 == 0)
+						{
+							Console.CursorLeft = 0;
+							Console.Write($"Records parsed: {recordCount}, Errors found: {errors.Count}".PadRight(Console.BufferWidth));
+						}
 					}
 				}
 
-				Console.CursorLeft = 0;
-				Console.WriteLine($"Records parsed: {recordCount}".PadRight(Console.BufferWidth));
-				Console.WriteLine("No errors found.  Model and data format are in sync.");
+				if (errors.Count > 0)
+				{
+					Console.WriteLine($"\n{errors.Count} errors found:");
+					foreach (var (Error, Line) in errors)
+					{
+						Console.WriteLine(Error);
+						Console.WriteLine($"  Line content: {Line}");
+					}
+				}
+				else
+				{
+
+					Console.CursorLeft = 0;
+					Console.WriteLine($"Records parsed: {recordCount}".PadRight(Console.BufferWidth));
+					Console.WriteLine("No errors found.  Model and data format are in sync.");
+				}
+
 				Console.WriteLine($"Time elapsed: {DateTime.Now.Subtract(start):c}");
 
-				return 0;
+				return errors.Count > 0 ? 1 : 0;
 			}
 			catch (JsonException e)
 			{
