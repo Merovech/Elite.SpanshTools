@@ -87,7 +87,8 @@ namespace Elite.SpanshTools.Utilities
 				Console.WriteLine($"Records parsed: {recordCount}".PadRight(Console.BufferWidth));
 				if (errors.Count > 0)
 				{
-					Console.WriteLine($"\n{errors.Count} errors found:");
+					Console.WriteLine($"\n{errors.Count} errors found.  Writing errors and related lines to ModelVerificationErrors.txt");
+					Console.WriteLine("WARNING: If there are lot of errors, this could take a while and the file could be very large.");
 					using (var writer = new StreamWriter("ModelVerificationErrors.txt"))
 					{
 						foreach (var (Error, Line) in errors)
