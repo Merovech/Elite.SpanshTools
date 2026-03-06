@@ -9,6 +9,8 @@ namespace Elite.SpanshTools.Utilities
 		private readonly static JsonSerializerOptions SerializerOptions = new()
 		{
 			PropertyNameCaseInsensitive = true,
+
+			// Ensures that if there are any properties in the data that aren't mapped to the model, an error will be thrown
 			UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow
 		};
 
@@ -36,7 +38,7 @@ namespace Elite.SpanshTools.Utilities
 			Console.WriteLine("that could potentially have quirks.");
 			Console.WriteLine();
 			Console.WriteLine("For ideal results, this should be run against the full Spansh galaxy dump, but");
-			Console.WriteLine("that takes a long time -- on the order of half an hour or more.");
+			Console.WriteLine("that takes a long time -- on the order of hours.");
 
 			Console.WriteLine();
 			Console.WriteLine($"Input file: {args[0]}");
@@ -71,6 +73,8 @@ namespace Elite.SpanshTools.Utilities
 					finally
 					{
 						recordCount++;
+
+						// Processing is slow enough during verificationm that printing every 10k doesn't slow down the process in any meaningful way.
 						if (recordCount % 10000 == 0)
 						{
 							Console.CursorLeft = 0;
@@ -79,31 +83,30 @@ namespace Elite.SpanshTools.Utilities
 					}
 				}
 
+				Console.CursorLeft = 0;
+				Console.WriteLine($"Records parsed: {recordCount}".PadRight(Console.BufferWidth));
 				if (errors.Count > 0)
 				{
 					Console.WriteLine($"\n{errors.Count} errors found:");
-					foreach (var (Error, Line) in errors)
+					using (var writer = new StreamWriter("ModelVerificationErrors.txt"))
 					{
-						Console.WriteLine(Error);
-						Console.WriteLine($"  Line content: {Line}");
+						foreach (var (Error, Line) in errors)
+						{
+							await writer.WriteLineAsync(Error);
+							await writer.WriteLineAsync("------------------------------");
+							await writer.WriteLineAsync(Line);
+							await writer.WriteLineAsync("------------------------------");
+						}
 					}
 				}
 				else
 				{
-
-					Console.CursorLeft = 0;
-					Console.WriteLine($"Records parsed: {recordCount}".PadRight(Console.BufferWidth));
 					Console.WriteLine("No errors found.  Model and data format are in sync.");
 				}
 
 				Console.WriteLine($"Time elapsed: {DateTime.Now.Subtract(start):c}");
 
 				return errors.Count > 0 ? 1 : 0;
-			}
-			catch (JsonException e)
-			{
-				Console.WriteLine($"\nParsing error (line: {e.LineNumber}): {e.Message}");
-				return 1;
 			}
 			catch (Exception e)
 			{

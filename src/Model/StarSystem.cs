@@ -25,7 +25,7 @@ namespace Elite.SpanshTools.Model
 
 		public int BodyCount { get; set; }
 
-		public ControllingFaction? ControllingFaction { get; set; }
+		public Faction? ControllingFaction { get; set; }
 
 		public List<Faction> Factions { get; set; } = [];
 
