@@ -20,7 +20,7 @@
 		<Company />
 		<PackageReadmeFile>README-nuget.md</PackageReadmeFile>
 		<RepositoryUrl>https://github.com/Merovech/Elite.SpanshTools</RepositoryUrl>
-		<PackageVersion>1.1.1</PackageVersion>
+		<PackageVersion>1.2.0</PackageVersion>
 		<PackageReleaseNotes>Model fixes to bring this to parity with the Galaxy dump from 05 March 2026.</PackageReleaseNotes>
 		<FileVersion></FileVersion>
 	</PropertyGroup>
