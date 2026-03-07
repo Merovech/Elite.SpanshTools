@@ -10,7 +10,7 @@
 		<Description>Tools to parse and manipulate Spansh data dumps for Elite: Dangerous.</Description>
 		<Copyright>Copyright © 2025-2026 Ari Roth</Copyright>
 		<PackageProjectUrl>https://github.com/Merovech/Elite.SpanshTools</PackageProjectUrl>
-		<AssemblyVersion>1.1.1</AssemblyVersion>
+		<AssemblyVersion>1.2.0</AssemblyVersion>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 		<EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
@@ -20,8 +20,8 @@
 		<Company />
 		<PackageReadmeFile>README-nuget.md</PackageReadmeFile>
 		<RepositoryUrl>https://github.com/Merovech/Elite.SpanshTools</RepositoryUrl>
-		<PackageVersion>1.1.1</PackageVersion>
-		<PackageReleaseNotes>Model fixes and updates to the validator.  See README-nuget.md for details.</PackageReleaseNotes>
+		<PackageVersion>1.2.0</PackageVersion>
+		<PackageReleaseNotes>Model fixes to bring this to parity with the Galaxy dump from 05 March 2026.</PackageReleaseNotes>
 		<FileVersion></FileVersion>
 	</PropertyGroup>
 

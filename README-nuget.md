@@ -63,6 +63,17 @@ There a few things to be aware of here:
 ```
 
 ## Changelist
+### 1.2.0
+* Model changes to get to parity with the Galaxy dump from 05 March 2026
+  * Factions now have `ActiveStates`, `PendingStates`, and `RecoveringStates`.
+  * Removed `ControllingFaction` class and replaced it with the `Faction` class.
+    * No change to the `System.ControllingFaction` properties; these classes were basically duplicated anyway.
+* Some minor improvements to the model verifier
+  * Now outputs errors and lines to disk; see console output for details.
+    * **NOTE**: This file can get large, so be careful.
+  * No longer requires a Debug build to run.  In fact, runs slightly faster with a Release build.
+  * Minor output logging improvements.
+  
 ### 1.1.1
 * `Belt` was missing `Signals`; this has been added.
   * It has the same properties and whatnot as the one on `Body`.
