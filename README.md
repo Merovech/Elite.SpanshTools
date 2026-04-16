@@ -119,11 +119,19 @@ There a few things to be aware of here:
   * :white_check_mark: Work item board
   * :white_check_mark: GitHub build actions
 * :white_check_mark: Unit tests
-* :white_square_button: XML documentation for the actual model
+* :white_check_mark: XML documentation for the actual model
 * :grey_question: Performance improvement investigation
 * :grey_question: Any community requests that come through :)
 
 ## Changelist
+:exclamation: indicates a potential breaking change.
+
+### 1.3.0
+* Added Intellisense descriptions to models and properties.
+  * These come from the schema published by Spansh, with added annotations if a list/dictionary defaults to empty or the property is required.
+* Ran the model against a full galaxy dump from 05 April 2026
+  * No changes were necessary.
+
 ### 1.2.0
 * Model changes to get to parity with the Galaxy dump from 05 March 2026
   * Factions now have `ActiveStates`, `PendingStates`, and `RecoveringStates`.
@@ -143,11 +151,9 @@ There a few things to be aware of here:
   * Also includes an elapsed time message.
 
 ### 1.1.0
-!! indicates a potential breaking change.
-
 * Added `ModelVerifier` project to ensure the model gets properly parsed from JSON.
 * Added various properties after running the verifier and discovering they were missing.
-* !! Fixed `RingSignals.SignalsInternal` since it wasn't properly being parsed.
+* :exclamation: Fixed `RingSignals.SignalsInternal` since it wasn't properly being parsed.
   * Changed the data type to `Dictionary<string, int>?`
   * Renamed it to `SignalsMap`
   * *Note: This is technically a breaking change, but it was always parsing incorrectly into default values, so I highly doubt anyone will actually run into a problem here.*
