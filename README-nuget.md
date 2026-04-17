@@ -63,6 +63,14 @@ There a few things to be aware of here:
 ```
 
 ## Changelist
+!! indicates a potential breaking change.
+
+### 1.3.0
+* Added Intellisense descriptions to models and properties.
+  * These come from the schema published by Spansh, with added annotations if a list/dictionary defaults to empty or the property is required.
+* Ran the model against a full galaxy dump from 05 April 2026
+  * No changes were necessary.
+
 ### 1.2.0
 * Model changes to get to parity with the Galaxy dump from 05 March 2026
   * Factions now have `ActiveStates`, `PendingStates`, and `RecoveringStates`.
@@ -82,8 +90,6 @@ There a few things to be aware of here:
   * Also includes an elapsed time message.
   
 ### 1.1.0
-!! indicates a potential breaking change.
-
 * Added `ModelVerifier` project to ensure the model gets properly parsed from JSON.
 * Added various properties after running the verifier and discovering they were missing.
 * !! Fixed `RingSignals.SignalsInternal` since it wasn't properly being parsed.
