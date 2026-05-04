@@ -120,6 +120,7 @@ There a few things to be aware of here:
   * :white_check_mark: GitHub build actions
 * :white_check_mark: Unit tests
 * :white_check_mark: XML documentation for the actual model
+* :grey_question: Move nuget.org package updating to a CD action in GitHub
 * :grey_question: Performance improvement investigation
 * :grey_question: Any community requests that come through :)
 
