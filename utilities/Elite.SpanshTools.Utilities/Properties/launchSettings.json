@@ -2,7 +2,7 @@
   "profiles": {
     "Elite.SpanshTools.Utilities": {
       "commandName": "Project",
-      "commandLineArgs": "d:\\data\\galaxy.json"
+      "commandLineArgs": "--data-location d:\\data --data-file=https://downloads.spansh.co.uk/galaxy_1day.json.gz"
     }
   }
 }
