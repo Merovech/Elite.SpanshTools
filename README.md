@@ -1,5 +1,8 @@
 # Elite.SpanshTools
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) ![NuGet Version](https://img.shields.io/nuget/v/Elite.SpanshTools)    
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+![NuGet Version](https://img.shields.io/nuget/v/Elite.SpanshTools) ![NuGet Downloads](https://img.shields.io/nuget/dt/Elite.SpanshTools)
+
 [![CI Build (Release)](https://github.com/Merovech/Elite.SpanshTools/actions/workflows/ci-build-release.yaml/badge.svg)](https://github.com/Merovech/Elite.SpanshTools/actions/workflows/ci-build-release.yaml)
 [![CI Build (Debug)](https://github.com/Merovech/Elite.SpanshTools/actions/workflows/ci-build-debug.yaml/badge.svg)](https://github.com/Merovech/Elite.SpanshTools/actions/workflows/ci-build-debug.yaml)
 
