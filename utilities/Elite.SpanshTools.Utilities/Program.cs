@@ -234,6 +234,8 @@ namespace Elite.SpanshTools.Utilities
 				else
 				{
 					Console.WriteLine("No errors found.  Model and data format are in sync.");
+					Console.WriteLine("Deleting the input file to save space.");
+					File.Delete(dataFilePath);
 				}
 
 				Console.WriteLine($"Time elapsed: {DateTime.Now.Subtract(start):c}");
