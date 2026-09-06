@@ -154,6 +154,7 @@ namespace Elite.SpanshTools.Utilities
 			}
 
 			Console.WriteLine($"Extracted '{extractedPath}'.");
+			File.Delete(archivePath);
 			return extractedPath;
 		}
 
