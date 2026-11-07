@@ -5,6 +5,10 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- For the parallel benchmarks, as recommended for consumers of the parallel API.  The BenchmarkDotNet
+         benchmarks pin their own GC settings (see Benchmarker). -->
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
   </PropertyGroup>
 
   <ItemGroup>
