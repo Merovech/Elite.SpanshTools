@@ -81,7 +81,8 @@ IAsyncEnumerable<StarSystem?> ParseStringAsync(string inputString);
 /// is responsible for the disposal of the stream</param>
 /// <returns>A StarSystem object, via enumeration.</returns>
 /// <remarks>It is assumed that the stream contains an array of JSON objects.  In addition, 
-/// the caller is responsible for the disposal of the stream.</remarks>
+/// the caller is responsible for the disposal of the stream.  The stream must be readable and 
+/// seekable (<see cref="Stream.CanSeek"/>); otherwise an <see cref="InvalidOperationException"/> is thrown.</remarks>
 IAsyncEnumerable<StarSystem?> ParseStreamAsync(Stream inputSteam);
 ```
 

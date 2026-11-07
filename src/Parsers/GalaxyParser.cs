@@ -64,6 +64,13 @@ namespace Elite.SpanshTools.Parsers
 		{
 			ArgumentNullException.ThrowIfNull(inputStream);
 
+			// Length (used below) is only available on seekable streams, so reject the rest up front rather
+			// than letting Length throw a NotSupportedException.
+			if (!inputStream.CanSeek)
+			{
+				throw new InvalidOperationException("Stream must be seekable (CanSeek must be true).");
+			}
+
 			if (inputStream.Length == 0)
 			{
 				throw new ArgumentException("Cannot parse an empty stream.");
