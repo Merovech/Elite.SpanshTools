@@ -51,7 +51,7 @@ await foreach (var batch in parser.ParseFileInBatchesAsync("galaxy.json"))
 
 * Gzip input (such as `galaxy.json.gz` straight from Spansh) is detected and decompressed on the fly.  Stream versions accept non-seekable streams.
 * The speed-up applies to the Spansh layout (one element per line).  Other layouts are detected and parsed sequentially with the same results.
-* For full speed, set `<ServerGarbageCollector>true</ServerGarbageCollector>` and `<ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>` in your *application's* project file.  Parsing allocates heavily, and this roughly doubles throughput.
+* For full speed, set `<ServerGarbageCollection>true</ServerGarbageCollection>` and `<ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>` in your *application's* project file.  Parsing allocates heavily, and this roughly doubles throughput.
 * Tune with `ParallelParseOptions` (`MaxDegreeOfParallelism`, `ChunkSize`, `PreserveOrder`, `MaxBufferedBatches`).  The defaults scale with the machine's processor count.
 
 ## Performance

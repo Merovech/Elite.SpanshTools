@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <AssemblyName>ests</AssemblyName>
     <!-- Parsing allocates heavily; server GC with concurrent GC off roughly doubles parallel parsing throughput. -->
-    <ServerGarbageCollector>true</ServerGarbageCollector>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
     <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
   </PropertyGroup>
 

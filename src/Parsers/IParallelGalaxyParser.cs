@@ -15,7 +15,7 @@ namespace Elite.SpanshTools.Parsers
 	/// single-threaded, so it usually limits throughput for compressed input.</para>
 	/// <para>Parsing allocates heavily.  For full throughput the host application should use server garbage
 	/// collection with concurrent collection off (in the application's project file:
-	/// <c>&lt;ServerGarbageCollector&gt;true&lt;/ServerGarbageCollector&gt;</c> and
+	/// <c>&lt;ServerGarbageCollection&gt;true&lt;/ServerGarbageCollection&gt;</c> and
 	/// <c>&lt;ConcurrentGarbageCollection&gt;false&lt;/ConcurrentGarbageCollection&gt;</c>).  A library cannot set
 	/// these on the application's behalf.</para>
 	/// </remarks>

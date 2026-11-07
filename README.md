@@ -127,7 +127,7 @@ Things to know:
 1. **Layout.** The speed-up applies to input laid out like the Spansh dumps: `[` on the first line, one element per line, `]` at the end.  Any other layout (minified, pretty-printed) is detected automatically and parsed sequentially, with the same results.  On the fast path each element is validated, but the commas between elements are not.
 2. **Garbage collection.** Parsing allocates heavily.  For full speed, the *application* should use server GC with concurrent GC off; this roughly doubles throughput.  A library can't set this for you.  In the application's project file:
 	``` xml
-	<ServerGarbageCollector>true</ServerGarbageCollector>
+	<ServerGarbageCollection>true</ServerGarbageCollection>
 	<ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
 	```
 3. **Compressed dumps.** Gzip input (such as `galaxy.json.gz` straight from Spansh) is detected by its content and decompressed on the fly, so you can skip unzipping it.  Decompression is single-threaded, so it, not parsing, sets the pace for compressed input.
