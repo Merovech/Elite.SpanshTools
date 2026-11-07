@@ -33,7 +33,16 @@ namespace Elite.SpanshTools.Sample
 					await RunDemoInternal(CountStationsWithModel);
 					break;
 
-				// TO DO: Other IGalaxyParser methods.
+				case DemoMethods.SystemsByFileParallel:
+					console.WriteLine($"Counting systems found in '{Filename}' in parallel...");
+					await RunDemoInternal(CountSystemsInParallel);
+					break;
+
+				case DemoMethods.StationsByFileInBatches:
+					console.WriteLine($"Counting stations found in '{Filename}' in parallel batches...");
+					await RunDemoInternal(CountStationsInBatches);
+					break;
+
 				default:
 					console.WriteLine("Unknown option selected.");
 					break;
@@ -94,8 +103,7 @@ namespace Elite.SpanshTools.Sample
 				if (system is not null)
 				{
 					systemCount++;
-					stationCount += system.Stations.Count;
-					stationCount += system.Bodies.Sum(b => b.Stations.Count);
+					stationCount += StationsIn(system);
 
 					if (systemCount % 10000 == 0)
 					{
@@ -107,5 +115,71 @@ namespace Elite.SpanshTools.Sample
 			console.ResetCursorLeft();
 			console.WriteLine($"Stations found: {stationCount}");
 		}
+
+		/// <summary>
+		/// Counts systems using every core.  The callback runs on several threads at once, so the count is kept
+		/// with Interlocked and console output is serialized with a lock.
+		/// </summary>
+		private async Task CountSystemsInParallel()
+		{
+			long count = 0;
+			var consoleLock = new object();
+
+			GalaxyParser parser = new GalaxyParser();
+			await parser.ParseFileParallelAsync(Filename, system =>
+			{
+				if (system is null)
+				{
+					throw new NullReferenceException("The input file contains a null entry where a star system was expected.");
+				}
+
+				long current = Interlocked.Increment(ref count);
+				if (current % 10000 == 0)
+				{
+					lock (consoleLock)
+					{
+						console.LogUpdate(current);
+					}
+				}
+			});
+
+			console.ResetCursorLeft();
+			console.WriteLine($"Systems found: {count}");
+		}
+
+		/// <summary>
+		/// Counts stations using every core for parsing, while this loop consumes the parsed batches on one thread,
+		/// so no locking is needed here.
+		/// </summary>
+		private async Task CountStationsInBatches()
+		{
+			long systemCount = 0;
+			long stationCount = 0;
+
+			GalaxyParser parser = new GalaxyParser();
+			await foreach (var batch in parser.ParseFileInBatchesAsync(Filename))
+			{
+				foreach (var system in batch)
+				{
+					if (system is null)
+					{
+						continue;
+					}
+
+					systemCount++;
+					stationCount += StationsIn(system);
+
+					if (systemCount % 10000 == 0)
+					{
+						console.LogUpdate(stationCount);
+					}
+				}
+			}
+
+			console.ResetCursorLeft();
+			console.WriteLine($"Stations found: {stationCount}");
+		}
+
+		private static int StationsIn(Model.StarSystem system) => system.Stations.Count + system.Bodies.Sum(b => b.Stations.Count);
 	}
 }

@@ -26,6 +26,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<InternalsVisibleTo Include="Elite.SpanshTools.Tests" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<EditorConfigFiles Remove="D:\src\spansh-parser\src\.editorconfig" />
 	</ItemGroup>
 

@@ -31,7 +31,7 @@ namespace Elite.SpanshTools.Tests
 		}
 
 		[TestMethod]
-		[DataRow(3)]
+		[DataRow(5)]
 		[DataRow(99)]
 		[DataRow(255)]
 		[DataRow(-1)]
@@ -263,6 +263,115 @@ namespace Elite.SpanshTools.Tests
 			Assert.AreEqual(0, (int)DemoMethods.None);
 			Assert.AreEqual(1, (int)DemoMethods.SystemsByFile);
 			Assert.AreEqual(2, (int)DemoMethods.StationsByFile);
+			Assert.AreEqual(3, (int)DemoMethods.SystemsByFileParallel);
+			Assert.AreEqual(4, (int)DemoMethods.StationsByFileInBatches);
+		}
+
+		// ---- Parallel demos ---------------------------------------------------------------------------------
+
+		[TestMethod]
+		[DataRow(true, DisplayName = "Spansh layout (parallel path)")]
+		[DataRow(false, DisplayName = "Minified layout (sequential fallback)")]
+		public async Task SystemsByFileParallel_Counts_Systems_And_Reports_Lines_In_Order(bool spanshLayout)
+		{
+			var content = spanshLayout ? TestHelpers.SpanshFormat(TestHelpers.Systems(7)) : TestHelpers.ArrayOfSystems(7);
+			using var file = new TempFile(content);
+			var (runner, console) = Create(file.Path);
+
+			await runner.RunDemo(DemoMethods.SystemsByFileParallel);
+
+			Assert.AreEqual(4, console.Lines.Count, string.Join(" | ", console.Lines));
+			Assert.AreEqual($"Counting systems found in '{file.Path}' in parallel...", console.Lines[0]);
+			Assert.AreEqual("Systems found: 7", console.Lines[1]);
+			StringAssert.StartsWith(console.Lines[2], "Completed in ");
+			Assert.AreEqual("Press any key to continue.", console.Lines[3]);
+			Assert.AreEqual(1, console.ReadKeyCalls);
+			Assert.AreEqual(1, console.CursorResets);
+		}
+
+		[TestMethod]
+		public async Task SystemsByFileParallel_Logs_Each_10000th_System_Once()
+		{
+			using var file = new TempFile(TestHelpers.SpanshFormat(TestHelpers.Systems(20001)));
+			var (runner, console) = Create(file.Path);
+
+			await runner.RunDemo(DemoMethods.SystemsByFileParallel);
+
+			// Workers finish in any order, so compare as a set.
+			CollectionAssert.AreEquivalent(new long[] { 10000, 20000 }, console.LogUpdates);
+			CollectionAssert.Contains(console.Lines, "Systems found: 20001");
+		}
+
+		[TestMethod]
+		public async Task SystemsByFileParallel_Null_Entry_Throws_NullReferenceException()
+		{
+			using var file = new TempFile(TestHelpers.SpanshFormat([TestHelpers.SystemJson(1, "A"), "null", TestHelpers.SystemJson(2, "B")]));
+			var (runner, console) = Create(file.Path);
+
+			await Assert.ThrowsExceptionAsync<NullReferenceException>(() => runner.RunDemo(DemoMethods.SystemsByFileParallel));
+
+			Assert.AreEqual(0, console.ReadKeyCalls);
+		}
+
+		[TestMethod]
+		public async Task StationsByFileInBatches_Counts_System_Level_And_Body_Level_Stations_And_Skips_Nulls()
+		{
+			var content = TestHelpers.SpanshFormat(
+			[
+				TestHelpers.SystemJson(1, "A", 2, TestHelpers.BodyJson(10, 3), TestHelpers.BodyJson(11, 1)),
+				"null",
+				TestHelpers.SystemJson(2, "B", 1, TestHelpers.BodyJson(20, 0)),
+				TestHelpers.SystemJson(3, "C"),
+			]);
+			using var file = new TempFile(content);
+			var (runner, console) = Create(file.Path);
+
+			await runner.RunDemo(DemoMethods.StationsByFileInBatches);
+
+			Assert.AreEqual(4, console.Lines.Count, string.Join(" | ", console.Lines));
+			Assert.AreEqual($"Counting stations found in '{file.Path}' in parallel batches...", console.Lines[0]);
+			Assert.AreEqual("Stations found: 7", console.Lines[1]);
+			Assert.AreEqual(1, console.ReadKeyCalls);
+		}
+
+		[TestMethod]
+		public async Task StationsByFileInBatches_Progress_Reports_The_Running_Station_Count()
+		{
+			using var file = new TempFile(TestHelpers.SpanshFormat(TestHelpers.Systems(10000, stationsPerSystem: 2)));
+			var (runner, console) = Create(file.Path);
+
+			await runner.RunDemo(DemoMethods.StationsByFileInBatches);
+
+			CollectionAssert.AreEqual(new long[] { 20000 }, console.LogUpdates);
+			CollectionAssert.Contains(console.Lines, "Stations found: 20000");
+		}
+
+		[TestMethod]
+		[DataRow(DemoMethods.SystemsByFileParallel)]
+		[DataRow(DemoMethods.StationsByFileInBatches)]
+		public async Task Parallel_Demos_Missing_File_Propagates_And_Never_Waits_For_A_Key(DemoMethods method)
+		{
+			var (runner, console) = Create($"missing-{Guid.NewGuid():N}.json");
+
+			await Assert.ThrowsExceptionAsync<InvalidOperationException>(() => runner.RunDemo(method));
+
+			Assert.AreEqual(0, console.ReadKeyCalls);
+		}
+
+		[TestMethod]
+		public async Task Sequential_And_Parallel_Demos_Agree()
+		{
+			var content = TestHelpers.SpanshFormat(TestHelpers.Systems(3000, stationsPerSystem: 1));
+			using var file = new TempFile(content);
+			var (runner, console) = Create(file.Path);
+
+			await runner.RunDemo(DemoMethods.SystemsByFile);
+			await runner.RunDemo(DemoMethods.SystemsByFileParallel);
+			await runner.RunDemo(DemoMethods.StationsByFile);
+			await runner.RunDemo(DemoMethods.StationsByFileInBatches);
+
+			Assert.AreEqual(2, console.Lines.Count(l => l == "Systems found: 3000"));
+			Assert.AreEqual(2, console.Lines.Count(l => l == "Stations found: 3000"));
 		}
 	}
 }

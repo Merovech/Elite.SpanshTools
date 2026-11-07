@@ -510,7 +510,7 @@ namespace Elite.SpanshTools.Parsers
 
 		private static byte[] Grow(byte[] buffer, int count, int newSize)
 		{
-			var larger = ArrayPool<byte>.Shared.Rent(newSize);
+			var larger = ArrayPool<byte>.Shared.Rent(LineDelimited.NextBufferSize(buffer.Length, newSize));
 			buffer.AsSpan(0, count).CopyTo(larger);
 			ArrayPool<byte>.Shared.Return(buffer);
 			return larger;

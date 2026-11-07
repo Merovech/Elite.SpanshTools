@@ -47,7 +47,7 @@ namespace Elite.SpanshTools.Tests
 		public void AvailableOptions_Excludes_The_None_Entry()
 		{
 			Assert.AreEqual(Enum.GetValues<DemoMethods>().Length - 1, HelperMethods.AvailableOptions);
-			Assert.AreEqual(2, HelperMethods.AvailableOptions);
+			Assert.AreEqual(4, HelperMethods.AvailableOptions);
 		}
 
 		// ---- GetSelection -----------------------------------------------------------------------------------
@@ -56,6 +56,8 @@ namespace Elite.SpanshTools.Tests
 		[DataRow("0", 0)]
 		[DataRow("1", 1)]
 		[DataRow("2", 2)]
+		[DataRow("3", 3)]
+		[DataRow("4", 4)]
 		public void GetSelection_Returns_A_Valid_Choice_Without_Prompting_Again(string input, int expected)
 		{
 			var output = CaptureOutput();
@@ -68,7 +70,7 @@ namespace Elite.SpanshTools.Tests
 		}
 
 		[TestMethod]
-		[DataRow("3")]
+		[DataRow("5")]
 		[DataRow("255")]
 		[DataRow("256")]
 		[DataRow("-1")]

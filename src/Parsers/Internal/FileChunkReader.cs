@@ -87,7 +87,7 @@ namespace Elite.SpanshTools.Parsers.Internal
 		{
 			if (buffer.Length - count < readAhead)
 			{
-				var larger = ArrayPool<byte>.Shared.Rent(Math.Max(buffer.Length * 2, count + readAhead));
+				var larger = ArrayPool<byte>.Shared.Rent(LineDelimited.NextBufferSize(buffer.Length, (long)count + readAhead));
 				buffer.AsSpan(0, count).CopyTo(larger);
 				ArrayPool<byte>.Shared.Return(buffer);
 				buffer = larger;

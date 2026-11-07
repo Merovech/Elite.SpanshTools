@@ -5,5 +5,7 @@
 		None = 0,
 		SystemsByFile,
 		StationsByFile,
+		SystemsByFileParallel,
+		StationsByFileInBatches,
 	}
 }

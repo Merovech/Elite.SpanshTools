@@ -26,6 +26,21 @@ namespace Elite.SpanshTools.Parsers.Internal
 		internal static bool IsGzip(ReadOnlySpan<byte> head) => head.Length >= 2 && head[0] == 0x1F && head[1] == 0x8B;
 
 		/// <summary>
+		/// Size for a buffer that has to grow to hold a long line: at least <paramref name="minimum"/>, normally
+		/// double the current size, never more than an array can hold.
+		/// </summary>
+		/// <exception cref="InvalidDataException">The line can't fit in any array.</exception>
+		internal static int NextBufferSize(int currentSize, long minimum)
+		{
+			if (currentSize >= Array.MaxLength || minimum > Array.MaxLength)
+			{
+				throw new InvalidDataException($"A line is longer than the largest supported buffer ({Array.MaxLength:N0} bytes).");
+			}
+
+			return (int)Math.Min(Math.Max((long)currentSize * 2, minimum), Array.MaxLength);
+		}
+
+		/// <summary>
 		/// Decides the layout from the start of the input.  It is line-delimited when the first line is exactly '['
 		/// and the first non-blank line after it holds exactly one complete element.
 		/// </summary>

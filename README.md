@@ -86,6 +86,54 @@ IAsyncEnumerable<StarSystem?> ParseStringAsync(string inputString);
 IAsyncEnumerable<StarSystem?> ParseStreamAsync(Stream inputSteam);
 ```
 
+## Parallel parsing (`IParallelGalaxyParser`)
+`GalaxyParser` also implements `IParallelGalaxyParser`, which parses on every core.  On a full galaxy dump this is roughly ten times faster than `ParseFileAsync` (see Performance, below).
+
+``` csharp
+var parser = new GalaxyParser();
+
+// Callback per system.  By default it is called from several threads at once, so it must be thread-safe.
+long count = 0;
+await parser.ParseFileParallelAsync("galaxy.json", system => Interlocked.Increment(ref count));
+
+// Or batches, consumed on one thread while parsing continues on the others.
+await foreach (var batch in parser.ParseFileInBatchesAsync("galaxy.json"))
+{
+	foreach (var system in batch)
+	{
+		// Do something with the system here
+	}
+}
+```
+
+| Method | Input | Delivery |
+| :--- | :--- | :--- |
+| `ParseFileParallelAsync` | File path (plain or gzip) | Callback per system |
+| `ParseFileInBatchesAsync` | File path (plain or gzip) | `IAsyncEnumerable` of batches |
+| `ParseStreamParallelAsync` | Any readable stream; need not be seekable | Callback per system |
+| `ParseStreamInBatchesAsync` | Any readable stream; need not be seekable | `IAsyncEnumerable` of batches |
+
+`ParallelParseOptions` (all optional):
+
+| Option | Default | Meaning |
+| :--- | :--- | :--- |
+| `MaxDegreeOfParallelism` | `Environment.ProcessorCount` | Chunks parsed at once. |
+| `ChunkSize` | 8 MiB | Bytes per unit of work.  Lines are never split, however long. |
+| `PreserveOrder` | `false` | Deliver in file order.  Callbacks then run one at a time. |
+| `MaxBufferedBatches` | 2 x `MaxDegreeOfParallelism` | Batches waiting for a slow consumer before parsing pauses; bounds memory. |
+
+Things to know:
+
+1. **Layout.** The speed-up applies to input laid out like the Spansh dumps: `[` on the first line, one element per line, `]` at the end.  Any other layout (minified, pretty-printed) is detected automatically and parsed sequentially, with the same results.  On the fast path each element is validated, but the commas between elements are not.
+2. **Garbage collection.** Parsing allocates heavily.  For full speed, the *application* should use server GC with concurrent GC off; this roughly doubles throughput.  A library can't set this for you.  In the application's project file:
+	``` xml
+	<ServerGarbageCollector>true</ServerGarbageCollector>
+	<ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+	```
+3. **Compressed dumps.** Gzip input (such as `galaxy.json.gz` straight from Spansh) is detected by its content and decompressed on the fly, so you can skip unzipping it.  Decompression is single-threaded, so it, not parsing, sets the pace for compressed input.
+4. **Errors.** The first error stops parsing and is rethrown: a `JsonException` naming the byte offset of the bad line, or whatever your callback threw.
+5. **Streams.** As with `ParseStreamAsync`, the caller disposes the stream.  Unlike it, the stream does not need to be seekable.
+
 ## Performance
 But how does it perform?  Well, in addition to your machine, performance is dependent on the length of the individual records.  A system like Sol (that has a JSON record 1,760,997 characters long) or Achenar (869,049 characters) will take longer to parse than Hypi Flee AA-A h0 (157 characters).  Likewise, the galaxy files that contain details about systems, bodies, stations, markets, and commodities will take longer than the system files that contain top-level system information only.
 

@@ -41,6 +41,8 @@
 			Console.WriteLine("Demos:");
 			Console.WriteLine("1\tCount systems using ParseByFile");
 			Console.WriteLine("2\tCount stations using ParseByFile");
+			Console.WriteLine("3\tCount systems using ParseFileParallelAsync (all cores)");
+			Console.WriteLine("4\tCount stations using ParseFileInBatchesAsync (all cores)");
 			Console.Write("Enter a selection (0 to exit): ");
 		}
 

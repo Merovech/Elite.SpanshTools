@@ -35,6 +35,25 @@ await foreach (var system in parser.ParseFileAsync(fileName))
 
 That's it!  In most cases, the library will take care of opening and disposing the file stream for you.  (With one exception; see Caveats, below.)
 
+## Parallel parsing
+`GalaxyParser` also implements `IParallelGalaxyParser`, which parses on every core and is roughly ten times faster on a full galaxy dump:
+
+``` csharp
+// Callback per system, called from several threads at once (pass PreserveOrder = true for file order).
+await parser.ParseFileParallelAsync("galaxy.json", system => { /* thread-safe work here */ });
+
+// Or batches, consumed on one thread while parsing continues on the others.
+await foreach (var batch in parser.ParseFileInBatchesAsync("galaxy.json"))
+{
+	foreach (var system in batch) { /* ... */ }
+}
+```
+
+* Gzip input (such as `galaxy.json.gz` straight from Spansh) is detected and decompressed on the fly.  Stream versions accept non-seekable streams.
+* The speed-up applies to the Spansh layout (one element per line).  Other layouts are detected and parsed sequentially with the same results.
+* For full speed, set `<ServerGarbageCollector>true</ServerGarbageCollector>` and `<ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>` in your *application's* project file.  Parsing allocates heavily, and this roughly doubles throughput.
+* Tune with `ParallelParseOptions` (`MaxDegreeOfParallelism`, `ChunkSize`, `PreserveOrder`, `MaxBufferedBatches`).  The defaults scale with the machine's processor count.
+
 ## Performance
 **But how does it perform?**
 Well, in addition to your machine, performance is dependent on the length of the individual records.  A system like Sol (that has a JSON record 1,760,997 characters long) or Achenar (869,049 characters) will take longer to parse than Hypi Flee AA-A h0 (157 characters).  Likewise, the galaxy files that contain details about systems, bodies, stations, markets, and commodities will take longer than the system files that contain top-level system information only.
