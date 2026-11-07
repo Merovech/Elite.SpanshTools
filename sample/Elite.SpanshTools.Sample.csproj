@@ -9,6 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Elite.SpanshTools.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\src\Elite.SpanshTools.csproj" />
   </ItemGroup>
 

@@ -8,6 +8,14 @@ namespace Elite.SpanshTools.Sample
 	{
 		private string Filename { get; init; } = filename;
 
+		private readonly IConsoleIO console = new SystemConsole();
+
+		/// <summary>Test seam: lets unit tests substitute the console.  Production code uses the public constructor.</summary>
+		internal DemoRunner(string filename, IConsoleIO console) : this(filename)
+		{
+			this.console = console;
+		}
+
 		public async Task RunDemo(DemoMethods methodToRun)
 		{
 			switch (methodToRun)
@@ -16,31 +24,31 @@ namespace Elite.SpanshTools.Sample
 					return;
 
 				case DemoMethods.SystemsByFile:
-					Console.WriteLine($"Counting systems found in '{Filename}...");
+					console.WriteLine($"Counting systems found in '{Filename}...");
 					await RunDemoInternal(CountSystemsByFile);
 					break;
 
 				case DemoMethods.StationsByFile:
-					Console.WriteLine($"Counting stations found in '{Filename}...");
+					console.WriteLine($"Counting stations found in '{Filename}...");
 					await RunDemoInternal(CountStationsWithModel);
 					break;
 
 				// TO DO: Other IGalaxyParser methods.
 				default:
-					Console.WriteLine("Unknown option selected.");
+					console.WriteLine("Unknown option selected.");
 					break;
 			}
 		}
 
-		private static async Task RunDemoInternal(Func<Task> demoMethod)
+		private async Task RunDemoInternal(Func<Task> demoMethod)
 		{
 			Stopwatch sw = new();
 			sw.Start();
 			await demoMethod();
 			sw.Stop();
-			Console.WriteLine($"Completed in {sw.Elapsed:c}");
-			Console.WriteLine("Press any key to continue.");
-			Console.ReadKey();
+			console.WriteLine($"Completed in {sw.Elapsed:c}");
+			console.WriteLine("Press any key to continue.");
+			console.ReadKey();
 		}
 
 		/// <summary>
@@ -54,15 +62,20 @@ namespace Elite.SpanshTools.Sample
 			GalaxyParser parser = new GalaxyParser();
 			await foreach (var system in parser.ParseFileAsync(Filename))
 			{
+				if (system is null)
+				{
+					throw new NullReferenceException("The input file contains a null entry where a star system was expected.");
+				}
+
 				count++;
 				if (count % 10000 == 0)
 				{
-					HelperMethods.LogUpdate(count);
+					console.LogUpdate(count);
 				}
 			}
 
-			Console.CursorLeft = 0;
-			Console.WriteLine($"Systems found: {count}");
+			console.ResetCursorLeft();
+			console.WriteLine($"Systems found: {count}");
 		}
 
 		/// <summary>
@@ -86,13 +99,13 @@ namespace Elite.SpanshTools.Sample
 
 					if (systemCount % 10000 == 0)
 					{
-						HelperMethods.LogUpdate(stationCount);
+						console.LogUpdate(stationCount);
 					}
 				}
 			}
 
-			Console.CursorLeft = 0;
-			Console.WriteLine($"Stations found: {stationCount}");
+			console.ResetCursorLeft();
+			console.WriteLine($"Stations found: {stationCount}");
 		}
 	}
 }

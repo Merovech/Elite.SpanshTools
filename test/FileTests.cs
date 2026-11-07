@@ -6,8 +6,6 @@ namespace Elite.SpanshTools.Tests
 	[TestClass]
 	public class FileTests
 	{
-		private const string Filename = "single.json";
-
 		[TestMethod]
 		public async Task Should_Fail_On_Empty_Filename()
 		{
@@ -39,23 +37,17 @@ namespace Elite.SpanshTools.Tests
 		public async Task Should_Return_Correctly_With_Valid_File()
 		{
 			GalaxyParser parser = new();
-			string filename = Filename;
 			long count = 0;
 
-			CreateTestFile();
+			// Unique temp file, deleted on dispose, so nothing is left in the test output folder.
+			using var file = new TempFile(TestJson.NoBodiesNoStations);
 
-			await foreach (var system in parser.ParseFileAsync(filename))
+			await foreach (var system in parser.ParseFileAsync(file.Path))
 			{
 				count++;
 			}
 
-			Assert.AreEqual(count, 1);
-		}
-
-		private void CreateTestFile()
-		{
-			File.Delete(Filename);
-			File.WriteAllText(Filename, TestJson.NoBodiesNoStations);
+			Assert.AreEqual(1, count);
 		}
 
 		private async Task<long> TestMethod(string filename)

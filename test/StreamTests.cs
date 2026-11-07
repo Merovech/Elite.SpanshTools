@@ -26,18 +26,15 @@ namespace Elite.SpanshTools.Tests
 		}
 
 		[TestMethod]
-		public async Task Should_Throw_On_Readonly_Stream()
+		public async Task Should_Throw_On_Empty_Write_Only_Stream()
 		{
-			File.WriteAllText("test-file.json", "");
+			// The file is zero-length, so this is rejected by the empty-stream check.  The unreadable-stream
+			// guard is covered separately in ParserBehaviorTests, using streams that have content.
+			using var file = new TempFile(string.Empty);
+			using FileStream fs = new(file.Path, FileMode.Open, FileAccess.Write);
 
-			using (FileStream fs = new("test-file.json", FileMode.Open, FileAccess.Write))
-			{
-
-				async Task<long> action() => await TestMethod(fs);
-				await Assert.ThrowsExceptionAsync<ArgumentException>(action);
-			}
-
-			File.Delete("test-file.json");
+			async Task<long> action() => await TestMethod(fs);
+			await Assert.ThrowsExceptionAsync<ArgumentException>(action);
 		}
 
 		[TestMethod]

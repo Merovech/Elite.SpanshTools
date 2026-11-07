@@ -15,7 +15,7 @@ namespace Elite.SpanshTools.Tests
 		[DataRow(TestJson.MultipleSystems, false)]
 		[DataRow(TestJson.NewLineAtEnd, false)]
 		[DataRow(TestJson.NoBodiesNoStations, false)]
-		[DataRow(TestJson.NoBodiesNoStations, false)]
+		[DataRow(TestJson.NoBodiesYesStations, false)]
 		[DataRow(TestJson.YesBodiesNoStations, false)]
 		public async Task Json_Should_Parse_As_Expected(string json, bool willThrowException)
 		{
