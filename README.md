@@ -87,7 +87,7 @@ IAsyncEnumerable<StarSystem?> ParseStreamAsync(Stream inputSteam);
 ```
 
 ## Parallel parsing (`IParallelGalaxyParser`)
-`GalaxyParser` also implements `IParallelGalaxyParser`, which parses on every core.  On a full galaxy dump this is roughly ten times faster than `ParseFileAsync` (see Performance, below).
+`GalaxyParser` also implements `IParallelGalaxyParser`, which parses on every core.  On a full galaxy dump this was about ten times faster than `ParseFileAsync` (see Performance, below).
 
 ``` csharp
 var parser = new GalaxyParser();
@@ -125,7 +125,7 @@ await foreach (var batch in parser.ParseFileInBatchesAsync("galaxy.json"))
 Things to know:
 
 1. **Layout.** The speed-up applies to input laid out like the Spansh dumps: `[` on the first line, one element per line, `]` at the end.  Any other layout (minified, pretty-printed) is detected automatically and parsed sequentially, with the same results.  On the fast path each element is validated, but the commas between elements are not.
-2. **Garbage collection.** Parsing allocates heavily.  For full speed, the *application* should use server GC with concurrent GC off; this roughly doubles throughput.  A library can't set this for you.  In the application's project file:
+2. **Garbage collection.** Parsing allocates heavily.  For full speed, the *application* should use server GC with concurrent GC off; in testing this made parallel parsing over five times faster.  A library can't set this for you.  In the application's project file:
 	``` xml
 	<ServerGarbageCollection>true</ServerGarbageCollection>
 	<ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
@@ -142,9 +142,12 @@ That said, here are some numbers I found during my testing.
 | File | File Size (unzipped) | Records Found | Time to Parse (mm:ss) | Records/Sec |
 | :--- | -------------------: | ------------: | --------------------: | ----------: |
 | galaxy.json | 481 GB | 161,064,963 | 41:26.76 | 64,769.10 |
+| galaxy.json, parallel (Nov 2026) | 621 GB | 203,737,392 | 07:05.70 | 478,593.83 |
 | galaxy_1month.json | 21 GB | 2,968,209 | 01:31.44 | 32,461.46 |
 | systems_neutron.json | 700 MB | 4,216,759 | 00:03.16 | 1,335,504.19 |
 | systems_1month.json | 646 MB | 3,788,924 | 00:03.82 | 992,889.16 |
+
+The parallel row used `ParseFileParallelAsync` with server GC on an i7-14700K (28 threads) and an NVMe SSD, with other software running; peak memory was 7.4 GB.  The same file parsed sequentially projects to 64-75 minutes, so about 10x.  On a 2 GB sample of it, the parallel path took 13.2 s without server GC and 2.3 s with it.
 
 ## Caveats
 There a few things to be aware of here:
