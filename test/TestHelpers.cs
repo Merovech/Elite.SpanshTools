@@ -81,6 +81,88 @@ namespace Elite.SpanshTools.Tests
 
 			return sb.Append(']').ToString();
 		}
+
+		/// <summary>Element JSON for systems 1..count, as SystemJson builds them.</summary>
+		internal static string[] Systems(int count, int stationsPerSystem = 0) =>
+			Enumerable.Range(1, count).Select(i => SystemJson(i, $"Sys {i}", stationsPerSystem)).ToArray();
+
+		/// <summary>
+		/// The layout of the real Spansh dump: '[' on its own line, then one tab-indented element per line with a
+		/// trailing comma (except the last), then ']' on its own line.
+		/// </summary>
+		internal static string SpanshFormat(IEnumerable<string> elements, string newline = "\n") =>
+			"[" + newline + string.Join("," + newline, elements.Select(e => "\t" + e)) + newline + "]";
+
+		internal static async Task<List<StarSystem?>> ParseFileParallelAsync(string filename, ParallelParseOptions? options = null)
+		{
+			var results = new System.Collections.Concurrent.ConcurrentQueue<StarSystem?>();
+			await new GalaxyParser().ParseFileParallelAsync(filename, s => results.Enqueue(s), options);
+			return results.ToList();
+		}
+
+		internal static async Task<List<StarSystem?>> ParseFileInBatchesAsync(string filename, ParallelParseOptions? options = null)
+		{
+			var results = new List<StarSystem?>();
+			await foreach (var batch in new GalaxyParser().ParseFileInBatchesAsync(filename, options))
+			{
+				results.AddRange(batch);
+			}
+
+			return results;
+		}
+
+		internal static async Task<List<StarSystem?>> ParseStreamParallelAsync(Stream stream, ParallelParseOptions? options = null)
+		{
+			var results = new System.Collections.Concurrent.ConcurrentQueue<StarSystem?>();
+			await new GalaxyParser().ParseStreamParallelAsync(stream, s => results.Enqueue(s), options);
+			return results.ToList();
+		}
+
+		internal static async Task<List<StarSystem?>> ParseStreamInBatchesAsync(Stream stream, ParallelParseOptions? options = null)
+		{
+			var results = new List<StarSystem?>();
+			await foreach (var batch in new GalaxyParser().ParseStreamInBatchesAsync(stream, options))
+			{
+				results.AddRange(batch);
+			}
+
+			return results;
+		}
+
+		/// <summary>Ids sorted ascending, with -1 standing in for null elements, for order-insensitive comparison.</summary>
+		internal static long[] SortedIds(IEnumerable<StarSystem?> systems) =>
+			systems.Select(s => s?.Id ?? -1).OrderBy(id => id).ToArray();
+
+		internal static byte[] Gzip(string text)
+		{
+			using var ms = new MemoryStream();
+			using (var gz = new System.IO.Compression.GZipStream(ms, System.IO.Compression.CompressionLevel.Fastest, leaveOpen: true))
+			{
+				var bytes = Encoding.UTF8.GetBytes(text);
+				gz.Write(bytes, 0, bytes.Length);
+			}
+
+			return ms.ToArray();
+		}
+	}
+
+	/// <summary>A readable stream that can't seek or report its length, like a network or decompression stream.</summary>
+	internal sealed class ForwardOnlyStream(byte[] content) : Stream
+	{
+		private readonly MemoryStream inner = new(content);
+
+		public override bool CanRead => true;
+		public override bool CanSeek => false;
+		public override bool CanWrite => false;
+		public override long Length => throw new NotSupportedException();
+		public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+		public override void Flush() { }
+		public override int Read(byte[] buffer, int offset, int count) => inner.Read(buffer, offset, count);
+		public override int Read(Span<byte> buffer) => inner.Read(buffer);
+		public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) => inner.ReadAsync(buffer, cancellationToken);
+		public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+		public override void SetLength(long value) => throw new NotSupportedException();
+		public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
 	}
 
 	/// <summary>A uniquely-named temp file that is deleted on disposal.</summary>
@@ -91,6 +173,11 @@ namespace Elite.SpanshTools.Tests
 		internal TempFile(string content, Encoding? encoding = null)
 		{
 			File.WriteAllText(Path, content, encoding ?? new UTF8Encoding(false));
+		}
+
+		internal TempFile(byte[] content)
+		{
+			File.WriteAllBytes(Path, content);
 		}
 
 		public void Dispose()

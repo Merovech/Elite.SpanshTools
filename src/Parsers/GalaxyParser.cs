@@ -5,7 +5,7 @@ using Elite.SpanshTools.Model;
 
 namespace Elite.SpanshTools.Parsers
 {
-	public class GalaxyParser : IGalaxyParser
+	public partial class GalaxyParser : IGalaxyParser
 	{
 		// Parsing of property names needs to be case-insensitive.  This is because the structure of the data
 		// isn't consistent -- for example, while nearly all properties are camel-case, the properties of
@@ -17,15 +17,7 @@ namespace Elite.SpanshTools.Parsers
 		/// <inheritdoc />
 		public async IAsyncEnumerable<StarSystem?> ParseFileAsync(string filename)
 		{
-			if (string.IsNullOrWhiteSpace(filename))
-			{
-				throw new ArgumentNullException(nameof(filename));
-			}
-
-			if (!File.Exists(filename))
-			{
-				throw new InvalidOperationException($"File '{filename}' not found.");
-			}
+			ValidateFilename(filename);
 
 			using (FileStream fs = File.OpenRead(filename))
 			{
@@ -36,6 +28,19 @@ namespace Elite.SpanshTools.Parsers
 				{
 					yield return item;
 				}
+			}
+		}
+
+		private static void ValidateFilename(string filename)
+		{
+			if (string.IsNullOrWhiteSpace(filename))
+			{
+				throw new ArgumentNullException(nameof(filename));
+			}
+
+			if (!File.Exists(filename))
+			{
+				throw new InvalidOperationException($"File '{filename}' not found.");
 			}
 		}
 
