@@ -30,7 +30,7 @@ namespace Elite.SpanshTools.Parsers.Internal
 		}
 
 		/// <summary>Parses the lines owned by chunk number <paramref name="chunk"/> into <paramref name="output"/>.</summary>
-		internal void ParseChunk(long chunk, List<StarSystem?> output, JsonSerializerOptions options)
+		internal void ParseChunk(long chunk, List<StarSystem?> output, JsonSerializerOptions options, Func<ElementParseError, bool>? onError = null)
 		{
 			long start = chunk * chunkSize;
 			long end = Math.Min(start + chunkSize, fileLength);
@@ -67,7 +67,7 @@ namespace Elite.SpanshTools.Parsers.Internal
 				}
 
 				int lineEnd = newline < 0 ? count : position + newline;
-				LineDelimited.ParseLine(buffer.AsSpan(position, lineEnd - position), bufferStart + position, output, options);
+				LineDelimited.ParseLine(buffer.AsSpan(position, lineEnd - position), bufferStart + position, output, options, onError);
 				if (newline < 0)
 				{
 					break;

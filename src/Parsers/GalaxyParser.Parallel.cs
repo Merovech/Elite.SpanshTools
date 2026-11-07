@@ -288,7 +288,7 @@ namespace Elite.SpanshTools.Parsers
 								}
 
 								var batch = new List<StarSystem?>();
-								reader.ParseChunk(chunk, batch, serializerOptions);
+								reader.ParseChunk(chunk, batch, serializerOptions, settings.OnElementError);
 								deliver(chunk, batch);
 							}
 						}
@@ -401,7 +401,7 @@ namespace Elite.SpanshTools.Parsers
 							try
 							{
 								var batch = new List<StarSystem?>();
-								LineDelimited.ParseRegion(segment.Buffer.AsSpan(0, segment.Count), segment.Offset, batch, serializerOptions);
+								LineDelimited.ParseRegion(segment.Buffer.AsSpan(0, segment.Count), segment.Offset, batch, serializerOptions, settings.OnElementError);
 								deliver(segment.Sequence, batch);
 							}
 							finally

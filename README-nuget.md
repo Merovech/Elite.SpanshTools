@@ -36,7 +36,7 @@ await foreach (var system in parser.ParseFileAsync(fileName))
 That's it!  In most cases, the library will take care of opening and disposing the file stream for you.  (With one exception; see Caveats, below.)
 
 ## Parallel parsing
-`GalaxyParser` also implements `IParallelGalaxyParser`, which parses on every core and is roughly ten times faster on a full galaxy dump:
+`GalaxyParser` also implements `IParallelGalaxyParser`, which parses on every core and was about 8.4 times faster on a full galaxy dump, at the cost of much more memory (see Performance):
 
 ``` csharp
 // Callback per system, called from several threads at once (pass PreserveOrder = true for file order).
@@ -53,6 +53,9 @@ await foreach (var batch in parser.ParseFileInBatchesAsync("galaxy.json"))
 * The speed-up applies to the Spansh layout (one element per line).  Other layouts are detected and parsed sequentially with the same results.
 * For full speed, set `<ServerGarbageCollection>true</ServerGarbageCollection>` and `<ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>` in your *application's* project file.  Parsing allocates heavily, and in testing this made parallel parsing over five times faster.
 * Tune with `ParallelParseOptions` (`MaxDegreeOfParallelism`, `ChunkSize`, `PreserveOrder`, `MaxBufferedBatches`).  The defaults scale with the machine's processor count.
+* By default the first bad element stops parsing.  Set `ParallelParseOptions.OnElementError` to skip bad elements instead (return `true`); it receives the exception, byte offset and element text, and must be thread-safe.
+
+`new GalaxyParser(JsonSerializerOptions)` parses with a copy of your options in every method (property names stay case-insensitive).  For example, `UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow` reports properties the model doesn't know about instead of ignoring them.
 
 ## Performance
 **But how does it perform?**

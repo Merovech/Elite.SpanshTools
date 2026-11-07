@@ -34,6 +34,23 @@ namespace Elite.SpanshTools.Parsers
 		/// </summary>
 		public int MaxBufferedBatches { get; set; }
 
+		/// <summary>
+		/// Called when an array element can't be parsed (malformed JSON, a missing required member, or a property
+		/// that the parser's <see cref="System.Text.Json.JsonSerializerOptions"/> reject, such as an unmapped one
+		/// under <see cref="System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow"/>).  Return true to
+		/// skip the element and keep parsing, or false to stop: the parse then fails with
+		/// <see cref="ElementParseError.Exception"/>.  Null (the default) stops at the first bad element.
+		/// </summary>
+		/// <remarks>
+		/// <para>Called from worker threads, possibly several at once and never in input order (even with
+		/// <see cref="PreserveOrder"/>), so it must be thread-safe.  An exception it throws fails the parse.</para>
+		/// <para>Skipped elements are not delivered.  Skipping is only possible for line-delimited input (the
+		/// Spansh layout).  Other input is parsed sequentially, which can't resume after a bad element; there a bad
+		/// element always fails the parse and this is not called.  Errors that aren't about one element (I/O
+		/// errors, a truncated file, cancellation) also always fail the parse.</para>
+		/// </remarks>
+		public Func<ElementParseError, bool>? OnElementError { get; set; }
+
 		/// <summary>Validates the options and returns an immutable snapshot of them.</summary>
 		internal Snapshot Validate()
 		{
@@ -53,9 +70,9 @@ namespace Elite.SpanshTools.Parsers
 			}
 
 			int buffered = MaxBufferedBatches == 0 ? Math.Max(2, MaxDegreeOfParallelism * 2) : MaxBufferedBatches;
-			return new Snapshot(MaxDegreeOfParallelism, ChunkSize, PreserveOrder, buffered);
+			return new Snapshot(MaxDegreeOfParallelism, ChunkSize, PreserveOrder, buffered, OnElementError);
 		}
 
-		internal readonly record struct Snapshot(int MaxDegreeOfParallelism, int ChunkSize, bool PreserveOrder, int MaxBufferedBatches);
+		internal readonly record struct Snapshot(int MaxDegreeOfParallelism, int ChunkSize, bool PreserveOrder, int MaxBufferedBatches, Func<ElementParseError, bool>? OnElementError);
 	}
 }

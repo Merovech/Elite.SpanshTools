@@ -87,7 +87,7 @@ IAsyncEnumerable<StarSystem?> ParseStreamAsync(Stream inputSteam);
 ```
 
 ## Parallel parsing (`IParallelGalaxyParser`)
-`GalaxyParser` also implements `IParallelGalaxyParser`, which parses on every core.  On a full galaxy dump this was about ten times faster than `ParseFileAsync` (see Performance, below).
+`GalaxyParser` also implements `IParallelGalaxyParser`, which parses on every core.  On a full galaxy dump this was about 8.4 times faster than `ParseFileAsync`, at the cost of much more memory (see Performance, below).
 
 ``` csharp
 var parser = new GalaxyParser();
@@ -121,6 +121,7 @@ await foreach (var batch in parser.ParseFileInBatchesAsync("galaxy.json"))
 | `ChunkSize` | 8 MiB | Bytes per unit of work.  Lines are never split, however long. |
 | `PreserveOrder` | `false` | Deliver in file order.  Callbacks then run one at a time. |
 | `MaxBufferedBatches` | 2 x `MaxDegreeOfParallelism` | Batches waiting for a slow consumer before parsing pauses; bounds memory. |
+| `OnElementError` | `null` | Called with an `ElementParseError` (exception, byte offset, element text) when an element can't be parsed.  Return `true` to skip it and keep going, `false` to stop.  `null` stops at the first bad element. |
 
 Things to know:
 
@@ -131,8 +132,20 @@ Things to know:
 	<ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
 	```
 3. **Compressed dumps.** Gzip input (such as `galaxy.json.gz` straight from Spansh) is detected by its content and decompressed on the fly, so you can skip unzipping it.  Decompression is single-threaded, so it, not parsing, sets the pace for compressed input.
-4. **Errors.** The first error stops parsing and is rethrown: a `JsonException` naming the byte offset of the bad line, or whatever your callback threw.
+4. **Errors.** By default the first error stops parsing and is rethrown: a `JsonException` naming the byte offset of the bad line, or whatever your callback threw.  With `OnElementError` you can skip bad elements instead (it runs on worker threads, so it must be thread-safe).  Skipping only works on the fast path; for other layouts a bad element always stops parsing.
 5. **Streams.** As with `ParseStreamAsync`, the caller disposes the stream.  Unlike it, the stream does not need to be seekable.
+
+### Custom serializer options
+`new GalaxyParser(JsonSerializerOptions)` uses a copy of your options for every parse method, sequential and parallel.  Property names are always matched case-insensitively, because the Spansh data mixes casing.  For example, this reports properties in the data that the model doesn't know about (normally they are ignored), and collects them instead of stopping at the first:
+
+``` csharp
+var strict = new GalaxyParser(new JsonSerializerOptions { UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow });
+var errors = new ConcurrentQueue<ElementParseError>();
+await strict.ParseFileParallelAsync("galaxy.json", system => { }, new ParallelParseOptions
+{
+	OnElementError = error => { errors.Enqueue(error); return true; }
+});
+```
 
 ## Performance
 But how does it perform?  Well, in addition to your machine, performance is dependent on the length of the individual records.  A system like Sol (that has a JSON record 1,760,997 characters long) or Achenar (869,049 characters) will take longer to parse than Hypi Flee AA-A h0 (157 characters).  Likewise, the galaxy files that contain details about systems, bodies, stations, markets, and commodities will take longer than the system files that contain top-level system information only.

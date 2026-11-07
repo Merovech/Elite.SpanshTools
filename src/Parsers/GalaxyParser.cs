@@ -12,7 +12,28 @@ namespace Elite.SpanshTools.Parsers
 		// solidComposition are all pascal-case.  So instead of trying to find the places where these are
 		// hidden, we'll just default to case-insensitive parsing.  If this becomes a problem I can always
 		// go around and track down where I need to pepper JsonProperyNameAttribute.
-		private readonly JsonSerializerOptions serializerOptions = new() { PropertyNameCaseInsensitive = true };
+		private readonly JsonSerializerOptions serializerOptions;
+
+		/// <summary>Creates a parser with the default serializer options.</summary>
+		public GalaxyParser()
+		{
+			serializerOptions = new() { PropertyNameCaseInsensitive = true };
+		}
+
+		/// <summary>
+		/// Creates a parser that deserializes with a copy of <paramref name="options"/>, for every parse method.
+		/// For example, <see cref="JsonUnmappedMemberHandling.Disallow"/> makes properties in the data that the model
+		/// doesn't map an error instead of silently ignoring them.
+		/// </summary>
+		/// <param name="options">The options to copy.  Later changes to this instance don't affect the parser, and
+		/// the parser doesn't make it read-only.  Property names are always matched case-insensitively, whatever
+		/// <see cref="JsonSerializerOptions.PropertyNameCaseInsensitive"/> says, because the data mixes casing.</param>
+		/// <exception cref="ArgumentNullException"><paramref name="options"/> is null.</exception>
+		public GalaxyParser(JsonSerializerOptions options)
+		{
+			ArgumentNullException.ThrowIfNull(options);
+			serializerOptions = new(options) { PropertyNameCaseInsensitive = true };
+		}
 
 		/// <inheritdoc />
 		public async IAsyncEnumerable<StarSystem?> ParseFileAsync(string filename)

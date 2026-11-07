@@ -7,6 +7,9 @@
     <Nullable>enable</Nullable>
     <BaseOutputPath>$(SolutionDir)bin</BaseOutputPath>
     <AssemblyName>ModelVerifier</AssemblyName>
+    <!-- The verifier uses the parallel parser, which needs these for full throughput. -->
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
   </PropertyGroup>
 
   <ItemGroup>

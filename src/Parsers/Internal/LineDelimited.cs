@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using Elite.SpanshTools.Model;
 
@@ -89,14 +90,15 @@ namespace Elite.SpanshTools.Parsers.Internal
 		/// <param name="regionOffset">Byte offset of <paramref name="region"/> within the input, for error messages.</param>
 		/// <param name="output">Receives the parsed elements.</param>
 		/// <param name="options">Serializer options.</param>
-		internal static void ParseRegion(ReadOnlySpan<byte> region, long regionOffset, List<StarSystem?> output, JsonSerializerOptions options)
+		/// <param name="onError">See <see cref="ParseLine"/>.</param>
+		internal static void ParseRegion(ReadOnlySpan<byte> region, long regionOffset, List<StarSystem?> output, JsonSerializerOptions options, Func<ElementParseError, bool>? onError = null)
 		{
 			int position = 0;
 			while (position < region.Length)
 			{
 				int newline = region[position..].IndexOf((byte)'\n');
 				int end = newline < 0 ? region.Length : position + newline;
-				ParseLine(region[position..end], regionOffset + position, output, options);
+				ParseLine(region[position..end], regionOffset + position, output, options, onError);
 				position = end + 1;
 			}
 		}
@@ -105,8 +107,11 @@ namespace Elite.SpanshTools.Parsers.Internal
 		/// Parses one line: strips the array punctuation around the element ('[', ']', ','), skips blank lines, and
 		/// deserializes what is left.
 		/// </summary>
-		/// <exception cref="JsonException">The element is invalid.  The message includes the line's byte offset.</exception>
-		internal static void ParseLine(ReadOnlySpan<byte> line, long lineOffset, List<StarSystem?> output, JsonSerializerOptions options)
+		/// <param name="onError">When the element is invalid: null, or returning false, throws; returning true skips
+		/// the element.</param>
+		/// <exception cref="JsonException">The element is invalid and wasn't skipped.  The message includes the
+		/// line's byte offset.</exception>
+		internal static void ParseLine(ReadOnlySpan<byte> line, long lineOffset, List<StarSystem?> output, JsonSerializerOptions options, Func<ElementParseError, bool>? onError = null)
 		{
 			var element = StripSeparators(line);
 			if (element.IsEmpty)
@@ -120,12 +125,19 @@ namespace Elite.SpanshTools.Parsers.Internal
 			}
 			catch (JsonException ex)
 			{
-				throw new JsonException(
+				var error = new JsonException(
 					$"Invalid array element in the line starting at byte offset {lineOffset}: {ex.Message}",
 					ex.Path,
 					ex.LineNumber,
 					ex.BytePositionInLine,
 					ex);
+
+				if (onError is not null && onError(new ElementParseError(error, lineOffset, Encoding.UTF8.GetString(element))))
+				{
+					return;
+				}
+
+				throw error;
 			}
 		}
 
