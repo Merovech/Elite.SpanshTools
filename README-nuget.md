@@ -63,12 +63,13 @@ That said, here are some numbers I found during my testing.
 | File | File Size (unzipped) | Records Found | Time to Parse (mm:ss) | Records/Sec |
 | :--- | -------------------: | ------------: | --------------------: | ----------: |
 | galaxy.json | 481 GB | 161,064,963 | 41:26.76 | 64,769.10 |
-| galaxy.json, parallel (Nov 2026) | 621 GB | 203,737,392 | 07:05.70 | 478,593.83 |
+| galaxy.json, sequential (Nov 2026) | 621 GB | 203,737,392 | 52:39.85 | 64,477 |
+| galaxy.json, parallel (Nov 2026) | 621 GB | 203,737,392 | 06:14.25 | 544,381 |
 | galaxy_1month.json | 21 GB | 2,968,209 | 01:31.44 | 32,461.46 |
 | systems_neutron.json | 700 MB | 4,216,759 | 00:03.16 | 1,335,504.19 |
 | systems_1month.json | 646 MB | 3,788,924 | 00:03.82 | 992,889.16 |
 
-The parallel row used `ParseFileParallelAsync` with server GC on an i7-14700K (28 threads) and an NVMe SSD, with other software running; peak memory was 7.4 GB.  The same file parsed sequentially projects to 64-75 minutes, so about 10x.  On a 2 GB sample of it, the parallel path took 13.2 s without server GC and 2.3 s with it.
+The two Nov 2026 rows are the same file on the same machine (an i7-14700K with 28 threads and an NVMe SSD), back to back on an otherwise idle system.  The sequential row used `ParseFileAsync` with the default GC; its peak memory was under 0.1 GB.  The parallel row used `ParseFileParallelAsync` with default options and server GC; its peak memory was 7.4 GB.  That is about 8.4x faster for about 90x the memory.  The parallel path is CPU-bound here (1.66 GB/s, against about 3 GB/s for the disk), so more cores help; lower `MaxDegreeOfParallelism` or `MaxBufferedBatches` to trade speed for memory.  On a 2 GB sample of the file, the parallel path took 13.2 s without server GC and 2.3 s with it.
 
 ## Caveats
 There a few things to be aware of here:
