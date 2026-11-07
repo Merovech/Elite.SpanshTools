@@ -15,6 +15,9 @@
 		/// <summary>Progress of the war (0-1).</summary>
 		public float Progress { get; set; }
 
+		/// <summary>Days remaining in the war.</summary>
+		public float DaysRemaining { get; set; }
+
 		/// <summary>Ports remaining in war.</summary>
 		public float PortsRemaining { get; set; }
 
