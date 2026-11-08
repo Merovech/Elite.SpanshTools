@@ -1,9 +1,10 @@
 using System.Diagnostics;
 using System.IO.Compression;
+using System.Runtime;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using CommandLine;
-using Elite.SpanshTools.Model;
+using Elite.SpanshTools.Parsers;
 
 namespace Elite.SpanshTools.Utilities
 {
@@ -160,94 +161,97 @@ namespace Elite.SpanshTools.Utilities
 
 		private static async Task<int> VerifyAsync(string dataFilePath)
 		{
-			int recordCount = 0;
-			List<(string Error, string Line)> errors = [];
-
 			Console.WriteLine("This tool parses a Spansh data file to the model to see if any properties are");
-			Console.WriteLine("missing or incorrectly parsed.  If there are any errors, the tool will exit.");
-			Console.WriteLine("Otherwise, the tool will run to the end.  The larger the data file, the more");
-			Console.WriteLine("trustworthy the results, since there are more systems that will be encountered");
-			Console.WriteLine("that could potentially have quirks.");
+			Console.WriteLine("missing or incorrectly parsed.  It runs to the end, collecting every error, and");
+			Console.WriteLine("groups them by kind.  The larger the data file, the more trustworthy the results,");
+			Console.WriteLine("since there are more systems that will be encountered that could potentially");
+			Console.WriteLine("have quirks.");
 			Console.WriteLine();
-			Console.WriteLine("For ideal results, this should be run against the full Spansh galaxy dump, but");
-			Console.WriteLine("that takes a long time -- on the order of hours.");
+			Console.WriteLine("For ideal results, this should be run against the full Spansh galaxy dump.  It is");
+			Console.WriteLine("parsed on every core, so it takes minutes rather than hours, but it needs several");
+			Console.WriteLine("GB of memory while it runs.");
 
 			Console.WriteLine();
 			Console.WriteLine($"Input file: {dataFilePath}");
-			Console.WriteLine("Beginning verificiation process.");
+			Console.WriteLine($"Server GC: {GCSettings.IsServerGC}.  Logical processors: {Environment.ProcessorCount}.");
+			Console.WriteLine("Beginning verification process.");
 			Console.WriteLine();
+
+			long parsed = 0;
+			var errors = new ErrorReport();
+			var stopwatch = Stopwatch.StartNew();
+			using var progressCts = new CancellationTokenSource();
+			var progress = ReportProgressAsync(() => Interlocked.Read(ref parsed) + errors.Count, () => errors.Count, progressCts.Token);
 
 			try
 			{
-				DateTime start = DateTime.Now;
-				Console.Write("Records parsed: 0");
-				await foreach (var line in File.ReadLinesAsync(dataFilePath))
-				{
-					if (line == "[" || line == "]")
-					{
-						continue;
-					}
-
-					try
-					{
-						var sanitizedLine = line;
-						if (line.EndsWith(','))
-						{
-							sanitizedLine = line[..^1];
-						}
-
-						JsonSerializer.Deserialize<StarSystem>(sanitizedLine, SerializerOptions);
-					}
-					catch (JsonException e)
-					{
-						errors.Add(($"Parsing error (line: {e.LineNumber}): {e.Message}", line));
-					}
-					finally
-					{
-						recordCount++;
-
-						// Processing is slow enough during verificationm that printing every 10k doesn't slow down the process in any meaningful way.
-						if (recordCount % 10000 == 0)
-						{
-							Console.CursorLeft = 0;
-							Console.Write($"Records parsed: {recordCount}, Errors found: {errors.Count}".PadRight(Console.BufferWidth));
-						}
-					}
-				}
-
-				Console.CursorLeft = 0;
-				Console.WriteLine($"Records parsed: {recordCount}".PadRight(Console.BufferWidth));
-				if (errors.Count > 0)
-				{
-					Console.WriteLine($"\n{errors.Count} errors found.  Writing errors and related lines to ModelVerificationErrors.txt");
-					Console.WriteLine("WARNING: If there are lot of errors, this could take a while and the file could be very large.");
-					using (var writer = new StreamWriter("ModelVerificationErrors.txt"))
-					{
-						foreach (var (Error, Line) in errors)
-						{
-							await writer.WriteLineAsync(Error);
-							await writer.WriteLineAsync("------------------------------");
-							await writer.WriteLineAsync(Line);
-							await writer.WriteLineAsync("------------------------------");
-						}
-					}
-				}
-				else
-				{
-					Console.WriteLine("No errors found.  Model and data format are in sync.");
-					Console.WriteLine("Deleting the input file to save space.");
-					File.Delete(dataFilePath);
-				}
-
-				Console.WriteLine($"Time elapsed: {DateTime.Now.Subtract(start):c}");
-
-				return errors.Count > 0 ? 1 : 0;
+				var options = new ParallelParseOptions { OnElementError = errors.Add };
+				await new GalaxyParser(SerializerOptions).ParseFileParallelAsync(dataFilePath, _ => Interlocked.Increment(ref parsed), options);
 			}
 			catch (Exception e)
 			{
+				await StopProgressAsync(progressCts, progress);
 				Console.WriteLine($"\nUnknown error: {e.Message}");
 				return 1;
 			}
+
+			await StopProgressAsync(progressCts, progress);
+			stopwatch.Stop();
+
+			Console.WriteLine($"Records parsed: {parsed + errors.Count:N0}".PadRight(ConsoleWidth()));
+			if (errors.Count > 0)
+			{
+				Console.WriteLine($"\n{errors.Count:N0} errors found, of {errors.Kinds.Count:N0} kinds.  Writing them to {ErrorFileName}.");
+				foreach (var kind in errors.Kinds)
+				{
+					Console.WriteLine($"  {kind.Count,12:N0}  {kind.Key}");
+				}
+
+				await errors.WriteAsync(ErrorFileName);
+			}
+			else
+			{
+				Console.WriteLine("No errors found.  Model and data format are in sync.");
+				Console.WriteLine("Deleting the input file to save space.");
+				File.Delete(dataFilePath);
+			}
+
+			Console.WriteLine($"Time elapsed: {stopwatch.Elapsed:c}");
+			return errors.Count > 0 ? 1 : 0;
 		}
+
+		private const string ErrorFileName = "ModelVerificationErrors.txt";
+
+		// Workers can't share the console cursor, so progress comes from a timer that reads the counters.
+		private static async Task ReportProgressAsync(Func<long> parsed, Func<long> errors, CancellationToken cancellationToken)
+		{
+			if (Console.IsOutputRedirected)
+			{
+				return;
+			}
+
+			using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+			try
+			{
+				while (await timer.WaitForNextTickAsync(cancellationToken))
+				{
+					Console.CursorLeft = 0;
+					Console.Write($"Records parsed: {parsed():N0}, Errors found: {errors():N0}".PadRight(ConsoleWidth() - 1));
+				}
+			}
+			catch (OperationCanceledException)
+			{
+			}
+
+			Console.CursorLeft = 0;
+		}
+
+		private static async Task StopProgressAsync(CancellationTokenSource cts, Task progress)
+		{
+			cts.Cancel();
+			await progress;
+		}
+
+		private static int ConsoleWidth() => Console.IsOutputRedirected ? 80 : Console.BufferWidth;
 	}
 }

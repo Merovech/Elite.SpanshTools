@@ -8,6 +8,14 @@ namespace Elite.SpanshTools.Sample
 	{
 		private string Filename { get; init; } = filename;
 
+		private readonly IConsoleIO console = new SystemConsole();
+
+		/// <summary>Test seam: lets unit tests substitute the console.  Production code uses the public constructor.</summary>
+		internal DemoRunner(string filename, IConsoleIO console) : this(filename)
+		{
+			this.console = console;
+		}
+
 		public async Task RunDemo(DemoMethods methodToRun)
 		{
 			switch (methodToRun)
@@ -16,31 +24,40 @@ namespace Elite.SpanshTools.Sample
 					return;
 
 				case DemoMethods.SystemsByFile:
-					Console.WriteLine($"Counting systems found in '{Filename}...");
+					console.WriteLine($"Counting systems found in '{Filename}...");
 					await RunDemoInternal(CountSystemsByFile);
 					break;
 
 				case DemoMethods.StationsByFile:
-					Console.WriteLine($"Counting stations found in '{Filename}...");
+					console.WriteLine($"Counting stations found in '{Filename}...");
 					await RunDemoInternal(CountStationsWithModel);
 					break;
 
-				// TO DO: Other IGalaxyParser methods.
+				case DemoMethods.SystemsByFileParallel:
+					console.WriteLine($"Counting systems found in '{Filename}' in parallel...");
+					await RunDemoInternal(CountSystemsInParallel);
+					break;
+
+				case DemoMethods.StationsByFileInBatches:
+					console.WriteLine($"Counting stations found in '{Filename}' in parallel batches...");
+					await RunDemoInternal(CountStationsInBatches);
+					break;
+
 				default:
-					Console.WriteLine("Unknown option selected.");
+					console.WriteLine("Unknown option selected.");
 					break;
 			}
 		}
 
-		private static async Task RunDemoInternal(Func<Task> demoMethod)
+		private async Task RunDemoInternal(Func<Task> demoMethod)
 		{
 			Stopwatch sw = new();
 			sw.Start();
 			await demoMethod();
 			sw.Stop();
-			Console.WriteLine($"Completed in {sw.Elapsed:c}");
-			Console.WriteLine("Press any key to continue.");
-			Console.ReadKey();
+			console.WriteLine($"Completed in {sw.Elapsed:c}");
+			console.WriteLine("Press any key to continue.");
+			console.ReadKey();
 		}
 
 		/// <summary>
@@ -54,15 +71,20 @@ namespace Elite.SpanshTools.Sample
 			GalaxyParser parser = new GalaxyParser();
 			await foreach (var system in parser.ParseFileAsync(Filename))
 			{
+				if (system is null)
+				{
+					throw new NullReferenceException("The input file contains a null entry where a star system was expected.");
+				}
+
 				count++;
 				if (count % 10000 == 0)
 				{
-					HelperMethods.LogUpdate(count);
+					console.LogUpdate(count);
 				}
 			}
 
-			Console.CursorLeft = 0;
-			Console.WriteLine($"Systems found: {count}");
+			console.ResetCursorLeft();
+			console.WriteLine($"Systems found: {count}");
 		}
 
 		/// <summary>
@@ -81,18 +103,83 @@ namespace Elite.SpanshTools.Sample
 				if (system is not null)
 				{
 					systemCount++;
-					stationCount += system.Stations.Count;
-					stationCount += system.Bodies.Sum(b => b.Stations.Count);
+					stationCount += StationsIn(system);
 
 					if (systemCount % 10000 == 0)
 					{
-						HelperMethods.LogUpdate(stationCount);
+						console.LogUpdate(stationCount);
 					}
 				}
 			}
 
-			Console.CursorLeft = 0;
-			Console.WriteLine($"Stations found: {stationCount}");
+			console.ResetCursorLeft();
+			console.WriteLine($"Stations found: {stationCount}");
 		}
+
+		/// <summary>
+		/// Counts systems using every core.  The callback runs on several threads at once, so the count is kept
+		/// with Interlocked and console output is serialized with a lock.
+		/// </summary>
+		private async Task CountSystemsInParallel()
+		{
+			long count = 0;
+			var consoleLock = new object();
+
+			GalaxyParser parser = new GalaxyParser();
+			await parser.ParseFileParallelAsync(Filename, system =>
+			{
+				if (system is null)
+				{
+					throw new NullReferenceException("The input file contains a null entry where a star system was expected.");
+				}
+
+				long current = Interlocked.Increment(ref count);
+				if (current % 10000 == 0)
+				{
+					lock (consoleLock)
+					{
+						console.LogUpdate(current);
+					}
+				}
+			});
+
+			console.ResetCursorLeft();
+			console.WriteLine($"Systems found: {count}");
+		}
+
+		/// <summary>
+		/// Counts stations using every core for parsing, while this loop consumes the parsed batches on one thread,
+		/// so no locking is needed here.
+		/// </summary>
+		private async Task CountStationsInBatches()
+		{
+			long systemCount = 0;
+			long stationCount = 0;
+
+			GalaxyParser parser = new GalaxyParser();
+			await foreach (var batch in parser.ParseFileInBatchesAsync(Filename))
+			{
+				foreach (var system in batch)
+				{
+					if (system is null)
+					{
+						continue;
+					}
+
+					systemCount++;
+					stationCount += StationsIn(system);
+
+					if (systemCount % 10000 == 0)
+					{
+						console.LogUpdate(stationCount);
+					}
+				}
+			}
+
+			console.ResetCursorLeft();
+			console.WriteLine($"Stations found: {stationCount}");
+		}
+
+		private static int StationsIn(Model.StarSystem system) => system.Stations.Count + system.Bodies.Sum(b => b.Stations.Count);
 	}
 }

@@ -35,6 +35,29 @@ await foreach (var system in parser.ParseFileAsync(fileName))
 
 That's it!  In most cases, the library will take care of opening and disposing the file stream for you.  (With one exception; see Caveats, below.)
 
+## Parallel parsing
+`GalaxyParser` also implements `IParallelGalaxyParser`, which parses on every core and was about 8.4 times faster on a full galaxy dump, at the cost of much more memory (see Performance):
+
+``` csharp
+// Callback per system, called from several threads at once (pass PreserveOrder = true for file order).
+await parser.ParseFileParallelAsync("galaxy.json", system => { /* thread-safe work here */ });
+
+// Or batches, consumed on one thread while parsing continues on the others.
+await foreach (var batch in parser.ParseFileInBatchesAsync("galaxy.json"))
+{
+	foreach (var system in batch) { /* ... */ }
+}
+```
+
+* Gzip input (such as `galaxy.json.gz` straight from Spansh) is detected and decompressed on the fly.  Stream versions accept non-seekable streams.
+* The speed-up applies to the Spansh layout (one element per line).  Other layouts are detected and parsed sequentially with the same results.
+* For full speed, set `<ServerGarbageCollection>true</ServerGarbageCollection>` and `<ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>` in your *application's* project file.  Parsing allocates heavily, and in testing this made parallel parsing over five times faster.
+* Tune with `ParallelParseOptions` (`MaxDegreeOfParallelism`, `ChunkSize`, `PreserveOrder`, `MaxBufferedBatches`).  The defaults scale with the machine's processor count.
+* `MaxLineLength` (default 64 MiB) fails the parse with `InvalidDataException` on a longer line, before it is fully read, which bounds memory use on untrusted input.  It applies to the Spansh layout only; other layouts are parsed sequentially without it.  Only one level of gzip is decompressed.
+* By default the first bad element stops parsing.  Set `ParallelParseOptions.OnElementError` to skip bad elements instead (return `true`); it receives the exception, byte offset and element text, and must be thread-safe.
+
+`new GalaxyParser(JsonSerializerOptions)` parses with a copy of your options in every method (property names stay case-insensitive).  For example, `UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow` reports properties the model doesn't know about instead of ignoring them.
+
 ## Performance
 **But how does it perform?**
 Well, in addition to your machine, performance is dependent on the length of the individual records.  A system like Sol (that has a JSON record 1,760,997 characters long) or Achenar (869,049 characters) will take longer to parse than Hypi Flee AA-A h0 (157 characters).  Likewise, the galaxy files that contain details about systems, bodies, stations, markets, and commodities will take longer than the system files that contain top-level system information only.
@@ -44,9 +67,13 @@ That said, here are some numbers I found during my testing.
 | File | File Size (unzipped) | Records Found | Time to Parse (mm:ss) | Records/Sec |
 | :--- | -------------------: | ------------: | --------------------: | ----------: |
 | galaxy.json | 481 GB | 161,064,963 | 41:26.76 | 64,769.10 |
+| galaxy.json, sequential (Nov 2026) | 621 GB | 203,737,392 | 52:39.85 | 64,477 |
+| galaxy.json, parallel (Nov 2026) | 621 GB | 203,737,392 | 06:14.25 | 544,381 |
 | galaxy_1month.json | 21 GB | 2,968,209 | 01:31.44 | 32,461.46 |
 | systems_neutron.json | 700 MB | 4,216,759 | 00:03.16 | 1,335,504.19 |
 | systems_1month.json | 646 MB | 3,788,924 | 00:03.82 | 992,889.16 |
+
+The two Nov 2026 rows are the same file on the same machine (an i7-14700K with 28 threads and an NVMe SSD), back to back on an otherwise idle system.  The sequential row used `ParseFileAsync` with the default GC; its peak memory was under 0.1 GB.  The parallel row used `ParseFileParallelAsync` with default options and server GC; its peak memory was 7.4 GB.  That is about 8.4x faster for about 90x the memory.  The parallel path is CPU-bound here (1.66 GB/s, against about 3 GB/s for the disk), so more cores help; lower `MaxDegreeOfParallelism` or `MaxBufferedBatches` to trade speed for memory.  On a 2 GB sample of the file, the parallel path took 13.2 s without server GC and 2.3 s with it.
 
 ## Caveats
 There a few things to be aware of here:
@@ -64,6 +91,18 @@ There a few things to be aware of here:
 
 ## Changelist
 !! indicates a potential breaking change.
+
+### 1.4.0
+* Added parallel parsing: `GalaxyParser` now also implements `IParallelGalaxyParser` (`ParseFileParallelAsync`, `ParseFileInBatchesAsync`, `ParseStreamParallelAsync`, `ParseStreamInBatchesAsync`).
+  * About 8.4 times faster on a full galaxy dump, at the cost of much more memory.  See Parallel parsing and Performance, above.
+  * Tuned with `ParallelParseOptions`.  `MaxLineLength` (default 64 MiB) bounds memory use on untrusted input, and `OnElementError` can skip bad elements instead of stopping.
+  * Gzip input is decompressed on the fly, and the stream versions accept non-seekable streams.
+* Added a `GalaxyParser(JsonSerializerOptions)` constructor; every parse method uses a copy of the options (property names stay case-insensitive).
+* Added `DaysRemaining` to `ThargoidWarState`.
+* !! `ParseStreamAsync` now throws `InvalidOperationException` for a non-seekable stream, before reading, instead of failing with `NotSupportedException`.
+* Added unit tests for the model, parsers and demo.
+* The model verifier now uses the parallel parser, reports properties the model doesn't know about, and groups errors by kind.
+* Ran the model verifier against a full galaxy dump from November 2026 with no errors.
 
 ### 1.3.0
 * Added Intellisense descriptions to models and properties.
