@@ -11,7 +11,9 @@ namespace Elite.SpanshTools.Parsers
 	/// element per line (commas and surrounding whitespace allowed), then ']'.  Each element is parsed and validated
 	/// on its own; the commas between elements are not.  Input with any other layout (minified, pretty-printed,
 	/// several elements per line at the start) is detected and parsed sequentially instead, with the same results.</para>
-	/// <para>Gzip-compressed input is detected by its content and decompressed on the fly.  Decompression is
+	/// <para>Gzip-compressed input is detected by its content and decompressed on the fly (one level: gzip inside
+	/// gzip is treated as invalid data).  <see cref="ParallelParseOptions.MaxLineLength"/> bounds the memory that
+	/// line-delimited input can make the parser use.  Decompression is
 	/// single-threaded, so it usually limits throughput for compressed input.</para>
 	/// <para>Parsing allocates heavily.  For full throughput the host application should use server garbage
 	/// collection with concurrent collection off (in the application's project file:

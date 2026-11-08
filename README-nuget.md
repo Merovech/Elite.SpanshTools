@@ -53,6 +53,7 @@ await foreach (var batch in parser.ParseFileInBatchesAsync("galaxy.json"))
 * The speed-up applies to the Spansh layout (one element per line).  Other layouts are detected and parsed sequentially with the same results.
 * For full speed, set `<ServerGarbageCollection>true</ServerGarbageCollection>` and `<ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>` in your *application's* project file.  Parsing allocates heavily, and in testing this made parallel parsing over five times faster.
 * Tune with `ParallelParseOptions` (`MaxDegreeOfParallelism`, `ChunkSize`, `PreserveOrder`, `MaxBufferedBatches`).  The defaults scale with the machine's processor count.
+* `MaxLineLength` (default 64 MiB) fails the parse with `InvalidDataException` on a longer line, before it is fully read, which bounds memory use on untrusted input.  It applies to the Spansh layout only; other layouts are parsed sequentially without it.  Only one level of gzip is decompressed.
 * By default the first bad element stops parsing.  Set `ParallelParseOptions.OnElementError` to skip bad elements instead (return `true`); it receives the exception, byte offset and element text, and must be thread-safe.
 
 `new GalaxyParser(JsonSerializerOptions)` parses with a copy of your options in every method (property names stay case-insensitive).  For example, `UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow` reports properties the model doesn't know about instead of ignoring them.

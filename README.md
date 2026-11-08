@@ -121,6 +121,7 @@ await foreach (var batch in parser.ParseFileInBatchesAsync("galaxy.json"))
 | `ChunkSize` | 8 MiB | Bytes per unit of work.  Lines are never split, however long. |
 | `PreserveOrder` | `false` | Deliver in file order.  Callbacks then run one at a time. |
 | `MaxBufferedBatches` | 2 x `MaxDegreeOfParallelism` | Batches waiting for a slow consumer before parsing pauses; bounds memory. |
+| `MaxLineLength` | 64 MiB | Longest allowed line.  A longer one fails the parse with `InvalidDataException` before it is fully read, which bounds memory use on untrusted input.  The longest line in the Spansh dumps is about 1.9 MB. |
 | `OnElementError` | `null` | Called with an `ElementParseError` (exception, byte offset, element text) when an element can't be parsed.  Return `true` to skip it and keep going, `false` to stop.  `null` stops at the first bad element. |
 
 Things to know:
@@ -134,6 +135,7 @@ Things to know:
 3. **Compressed dumps.** Gzip input (such as `galaxy.json.gz` straight from Spansh) is detected by its content and decompressed on the fly, so you can skip unzipping it.  Decompression is single-threaded, so it, not parsing, sets the pace for compressed input.
 4. **Errors.** By default the first error stops parsing and is rethrown: a `JsonException` naming the byte offset of the bad line, or whatever your callback threw.  With `OnElementError` you can skip bad elements instead (it runs on worker threads, so it must be thread-safe).  Skipping only works on the fast path; for other layouts a bad element always stops parsing.
 5. **Streams.** As with `ParseStreamAsync`, the caller disposes the stream.  Unlike it, the stream does not need to be seekable.
+6. **Untrusted input.** Each raw-byte buffer the parser holds is at most about twice `ChunkSize` + `MaxLineLength`, and it holds up to about 3 x `MaxDegreeOfParallelism` of them; the parsed objects come on top.  Lower those (and `MaxBufferedBatches`) to bound memory further.  The limit applies to the Spansh layout only: other layouts are parsed sequentially by System.Text.Json, which buffers each element whole, so if you parse files you don't trust, check that the first line is exactly `[` or use a seekable copy and the sequential API with your own size checks.  Only one level of gzip is decompressed; gzip inside gzip is rejected as invalid JSON.
 
 ### Custom serializer options
 `new GalaxyParser(JsonSerializerOptions)` uses a copy of your options for every parse method, sequential and parallel.  Property names are always matched case-insensitively, because the Spansh data mixes casing.  For example, this reports properties in the data that the model doesn't know about (normally they are ignored), and collects them instead of stopping at the first:

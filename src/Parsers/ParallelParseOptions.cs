@@ -10,6 +10,9 @@ namespace Elite.SpanshTools.Parsers
 		/// <summary>Largest allowed <see cref="ChunkSize"/> (1 GiB).</summary>
 		public const int MaxChunkSize = 1024 * 1024 * 1024;
 
+		/// <summary>Default for <see cref="MaxLineLength"/> (64 MiB), about 35 times the longest line in the Spansh dumps.</summary>
+		public const int DefaultMaxLineLength = 64 * 1024 * 1024;
+
 		/// <summary>
 		/// Maximum number of chunks parsed at the same time.  Defaults to <see cref="Environment.ProcessorCount"/>.
 		/// </summary>
@@ -33,6 +36,19 @@ namespace Elite.SpanshTools.Parsers
 		/// <see cref="MaxDegreeOfParallelism"/>.
 		/// </summary>
 		public int MaxBufferedBatches { get; set; }
+
+		/// <summary>
+		/// The longest line, in bytes, that line-delimited input may contain.  A longer line fails the parse with an
+		/// <see cref="InvalidDataException"/> (it is not passed to <see cref="OnElementError"/>), before it is fully
+		/// read into memory.  Defaults to <see cref="DefaultMaxLineLength"/>; at most <see cref="Array.MaxLength"/>.
+		/// </summary>
+		/// <remarks>
+		/// This bounds the memory that input can make the parser use for raw bytes: each buffer is at most about
+		/// twice <see cref="ChunkSize"/> plus this, and up to about three times <see cref="MaxDegreeOfParallelism"/>
+		/// buffers are held at once.  The parsed objects come on top of that.  Input that isn't line-delimited is
+		/// parsed sequentially by System.Text.Json and is not subject to this limit.
+		/// </remarks>
+		public int MaxLineLength { get; set; } = DefaultMaxLineLength;
 
 		/// <summary>
 		/// Called when an array element can't be parsed (malformed JSON, a missing required member, or a property
@@ -69,10 +85,15 @@ namespace Elite.SpanshTools.Parsers
 				throw new ArgumentOutOfRangeException(nameof(MaxBufferedBatches), MaxBufferedBatches, "Must not be negative.");
 			}
 
+			if (MaxLineLength < 1 || MaxLineLength > Array.MaxLength)
+			{
+				throw new ArgumentOutOfRangeException(nameof(MaxLineLength), MaxLineLength, $"Must be between 1 and {Array.MaxLength}.");
+			}
+
 			int buffered = MaxBufferedBatches == 0 ? Math.Max(2, MaxDegreeOfParallelism * 2) : MaxBufferedBatches;
-			return new Snapshot(MaxDegreeOfParallelism, ChunkSize, PreserveOrder, buffered, OnElementError);
+			return new Snapshot(MaxDegreeOfParallelism, ChunkSize, PreserveOrder, buffered, MaxLineLength, OnElementError);
 		}
 
-		internal readonly record struct Snapshot(int MaxDegreeOfParallelism, int ChunkSize, bool PreserveOrder, int MaxBufferedBatches, Func<ElementParseError, bool>? OnElementError);
+		internal readonly record struct Snapshot(int MaxDegreeOfParallelism, int ChunkSize, bool PreserveOrder, int MaxBufferedBatches, int MaxLineLength, Func<ElementParseError, bool>? OnElementError);
 	}
 }

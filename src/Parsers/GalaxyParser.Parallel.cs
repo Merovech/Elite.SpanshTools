@@ -197,7 +197,7 @@ namespace Elite.SpanshTools.Parsers
 			using (SafeFileHandle handle = File.OpenHandle(filename, FileMode.Open, FileAccess.Read, FileShare.Read))
 			{
 				long length = RandomAccess.GetLength(handle);
-				if (DetectFileLayout(handle, length) == Layout.LineDelimited)
+				if (LineDelimited.DetectLayout(length, (destination, offset) => RandomAccess.Read(handle, destination, offset)) == Layout.LineDelimited)
 				{
 					await FileLinesPipelineAsync(handle, length, settings, deliver, window, cancellationToken).ConfigureAwait(false);
 					return;
@@ -209,51 +209,6 @@ namespace Elite.SpanshTools.Parsers
 			await using (fileStream.ConfigureAwait(false))
 			{
 				await StreamPipelineAsync(fileStream, settings, deliver, window, cancellationToken).ConfigureAwait(false);
-			}
-		}
-
-		private static Layout DetectFileLayout(SafeFileHandle handle, long length)
-		{
-			int size = (int)Math.Min(length, 64 * 1024);
-			while (true)
-			{
-				byte[] head = ArrayPool<byte>.Shared.Rent(Math.Max(size, 1));
-				try
-				{
-					int count = 0;
-					while (count < size)
-					{
-						int read = RandomAccess.Read(handle, head.AsSpan(count, size - count), count);
-						if (read <= 0)
-						{
-							break;
-						}
-
-						count += read;
-					}
-
-					if (LineDelimited.IsGzip(head.AsSpan(0, count)))
-					{
-						return Layout.Other;
-					}
-
-					var layout = LineDelimited.Detect(head.AsSpan(0, count), isComplete: count >= length);
-					if (layout != Layout.NeedMoreData)
-					{
-						return layout;
-					}
-
-					if (size >= LineDelimited.MaxDetectionBytes)
-					{
-						return Layout.Other;
-					}
-
-					size = (int)Math.Min(Math.Min((long)size * 4, LineDelimited.MaxDetectionBytes), length);
-				}
-				finally
-				{
-					ArrayPool<byte>.Shared.Return(head);
-				}
 			}
 		}
 
@@ -272,7 +227,7 @@ namespace Elite.SpanshTools.Parsers
 				workers[i] = Task.Factory.StartNew(
 					() =>
 					{
-						using var reader = new FileChunkReader(handle, length, settings.ChunkSize);
+						using var reader = new FileChunkReader(handle, length, settings.ChunkSize, settings.MaxLineLength);
 						try
 						{
 							while (true)
@@ -307,7 +262,9 @@ namespace Elite.SpanshTools.Parsers
 			errors.ThrowIfAny(cancellationToken);
 		}
 
-		private async Task StreamPipelineAsync(Stream stream, ParallelParseOptions.Snapshot settings, Deliver deliver, SemaphoreSlim? window, CancellationToken cancellationToken)
+		// 'decompressed' is true for the output of a gzip layer: gzip inside that is treated as plain (invalid)
+		// data, not decompressed again, so hostile input can't make this recurse once per nested layer.
+		private async Task StreamPipelineAsync(Stream stream, ParallelParseOptions.Snapshot settings, Deliver deliver, SemaphoreSlim? window, CancellationToken cancellationToken, bool decompressed = false)
 		{
 			cancellationToken.ThrowIfCancellationRequested();
 
@@ -325,7 +282,7 @@ namespace Elite.SpanshTools.Parsers
 					count += read;
 				}
 
-				if (LineDelimited.IsGzip(buffer.AsSpan(0, count)))
+				if (!decompressed && LineDelimited.IsGzip(buffer.AsSpan(0, count)))
 				{
 					var replay = new PrefixedStream(buffer.AsSpan(0, count).ToArray(), stream);
 					ArrayPool<byte>.Shared.Return(buffer);
@@ -334,7 +291,7 @@ namespace Elite.SpanshTools.Parsers
 					var gzip = new GZipStream(replay, CompressionMode.Decompress);
 					await using (gzip.ConfigureAwait(false))
 					{
-						await StreamPipelineAsync(gzip, settings, deliver, window, cancellationToken).ConfigureAwait(false);
+						await StreamPipelineAsync(gzip, settings, deliver, window, cancellationToken, decompressed: true).ConfigureAwait(false);
 					}
 
 					return;
@@ -401,7 +358,7 @@ namespace Elite.SpanshTools.Parsers
 							try
 							{
 								var batch = new List<StarSystem?>();
-								LineDelimited.ParseRegion(segment.Buffer.AsSpan(0, segment.Count), segment.Offset, batch, serializerOptions, settings.OnElementError);
+								LineDelimited.ParseRegion(segment.Buffer.AsSpan(0, segment.Count), segment.Offset, batch, serializerOptions, settings.OnElementError, settings.MaxLineLength);
 								deliver(segment.Sequence, batch);
 							}
 							finally
@@ -440,19 +397,35 @@ namespace Elite.SpanshTools.Parsers
 							break;
 						}
 
-						buffer = Grow(buffer, count, buffer.Length * 2); // One line is longer than the buffer.
+						// One line is longer than the buffer.  Stop before buffering more than the limit allows.
+						if (count > settings.MaxLineLength)
+						{
+							throw LineDelimited.LineTooLong(offset, settings.MaxLineLength);
+						}
+
+						buffer = Grow(buffer, count, buffer.Length * 2);
 						continue;
 					}
 
-					var next = ArrayPool<byte>.Shared.Rent(Math.Max(settings.ChunkSize, (count - cut) * 2));
-					buffer.AsSpan(cut, count - cut).CopyTo(next);
-
-					if (window is not null)
+					var next = ArrayPool<byte>.Shared.Rent(LineDelimited.CarryOverBufferSize(settings.ChunkSize, count - cut));
+					try
 					{
-						await window.WaitAsync(cts.Token).ConfigureAwait(false);
+						buffer.AsSpan(cut, count - cut).CopyTo(next);
+
+						if (window is not null)
+						{
+							await window.WaitAsync(cts.Token).ConfigureAwait(false);
+						}
+
+						await segments.Writer.WriteAsync(new Segment(sequence++, buffer, cut, offset), cts.Token).ConfigureAwait(false);
+					}
+					catch
+					{
+						// 'buffer' is still ours (the finally below returns it); 'next' never got used.
+						ArrayPool<byte>.Shared.Return(next);
+						throw;
 					}
 
-					await segments.Writer.WriteAsync(new Segment(sequence++, buffer, cut, offset), cts.Token).ConfigureAwait(false);
 					offset += cut;
 					count -= cut;
 					buffer = next;
@@ -475,6 +448,13 @@ namespace Elite.SpanshTools.Parsers
 			}
 
 			await Task.WhenAll(workers).ConfigureAwait(false);
+
+			// After an error or cancellation the workers leave segments behind; give their buffers back.
+			while (segments.Reader.TryRead(out var abandoned))
+			{
+				ArrayPool<byte>.Shared.Return(abandoned.Buffer);
+			}
+
 			errors.ThrowIfAny(cancellationToken);
 		}
 
