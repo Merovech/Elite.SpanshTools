@@ -92,6 +92,18 @@ There a few things to be aware of here:
 ## Changelist
 !! indicates a potential breaking change.
 
+### 1.4.0
+* Added parallel parsing: `GalaxyParser` now also implements `IParallelGalaxyParser` (`ParseFileParallelAsync`, `ParseFileInBatchesAsync`, `ParseStreamParallelAsync`, `ParseStreamInBatchesAsync`).
+  * About 8.4 times faster on a full galaxy dump, at the cost of much more memory.  See Parallel parsing and Performance, above.
+  * Tuned with `ParallelParseOptions`.  `MaxLineLength` (default 64 MiB) bounds memory use on untrusted input, and `OnElementError` can skip bad elements instead of stopping.
+  * Gzip input is decompressed on the fly, and the stream versions accept non-seekable streams.
+* Added a `GalaxyParser(JsonSerializerOptions)` constructor; every parse method uses a copy of the options (property names stay case-insensitive).
+* Added `DaysRemaining` to `ThargoidWarState`.
+* !! `ParseStreamAsync` now throws `InvalidOperationException` for a non-seekable stream, before reading, instead of failing with `NotSupportedException`.
+* Added unit tests for the model, parsers and demo.
+* The model verifier now uses the parallel parser, reports properties the model doesn't know about, and groups errors by kind.
+* Ran the model verifier against a full galaxy dump from November 2026 with no errors.
+
 ### 1.3.0
 * Added Intellisense descriptions to models and properties.
   * These come from the schema published by Spansh, with added annotations if a list/dictionary defaults to empty or the property is required.
